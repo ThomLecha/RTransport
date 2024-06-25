@@ -2,7 +2,7 @@ main_color <- "black"
 
 input_date <- shinyWidgets::airDatepickerInput(
   "date",
-  label = "Mois choisi",
+  label = "Select a month",
   value = "2019-01-01",
   view = "months",
   minView = "months",
@@ -20,10 +20,10 @@ input_airport <- selectInput(
 )
 
 ui <- page_navbar(
-  title = "Tableau de bord des aéroports français",
+  title = "Air traffic in France",
   bg = main_color,
   inverse = TRUE,
-  header = em("Projet issu du funathon 2024, organisé par l'Insee et la DGAC"),
+  header = em("Realized at the funathon 2024, organized by Insee and DGAC"),
   layout_columns(
     card(
       HTML(
@@ -34,7 +34,7 @@ ui <- page_navbar(
     ),
     layout_columns(
       card(leafletOutput("carte")),
-      card(card_header("Fréquentation d'un aéroport", class = "bg-dark"),
+      card(card_header("Traffic in an airport", class = "bg-dark"),
            input_airport,
            plotlyOutput("lineplot")
           ),

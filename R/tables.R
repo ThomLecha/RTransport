@@ -18,20 +18,20 @@ create_table_airports <- function(stats_aeroports){
   
   table_aeroports <- table_aeroports %>%
     cols_label(
-      name_clean = md("**Aéroport**"),
-      paxdep = md("**Départs**"),
-      paxarr = md("**Arrivée**"),
+      name_clean = md("**Airport**"),
+      paxdep = md("**Dep**"),
+      paxarr = md("**Arr**"),
       paxtra = md("**Transit**")
     ) %>%
     tab_header(
-      title = md("**Statistiques de fréquentation**"),
-      subtitle = md("Classement des aéroports")
+      title = md("**Traffic in french airports**"),
+      subtitle = md("from most frequented to least frequented")
     ) %>%
     tab_style(
       style = cell_fill(color = "powderblue"),
       locations = cells_title()
     ) %>%
-    tab_source_note(source_note = md("_Source: DGAC, à partir des données sur data.gouv.fr_"))
+    tab_source_note(source_note = md("_Source: DGAC, data available on data.gouv.fr_"))
   
   table_aeroports <- table_aeroports %>%
     opt_interactive()
