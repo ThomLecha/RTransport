@@ -96,31 +96,38 @@ summary_stat_links <- function(data){
 
 #MAP LEAFLET AIRPORT----
 map_leaflet_airport <- function(df, airports_location, months, years){
-  #palette <- c("green", "orange", "darkred")
+  palette <- c("green", "orange", "darkred")
   traffic_date <- df %>%
     mutate(
       date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d")
     ) %>%
-    filter(mois %in% months, an %in% years)
+    filter(mois %in% months, an %in% years) %>% 
+    mutate(traffic = apt_pax_dep+apt_pax_arr+apt_pax_tr) %>% 
+    group_by(apt) %>%
+    summarise(traffic = sum(traffic)) %>%
+    ungroup() %>% 
+    mutate(volume = case_when(
+      (traffic > 999999)~3,
+      (traffic > 99999)~2,
+      (traffic < 100000)~1
+      )
+    ) %>% 
+    mutate(color = palette[volume])
+  
   traffic_airports <- airports_location %>%
     inner_join(traffic_date, by = c("Code.OACI" = "apt"))
-  #traffic_airports <- traffic_airports %>%
-  #  mutate(
-  #    volume = ntile(traffic, 3)
-  #  ) %>%
-  #  mutate(color = palette[volume])
-  
+
   icons <- awesomeIcons(
     icon = 'plane',
     iconColor = 'black',
-    library = 'fa'#,
-    #markerColor = traffic_airports$color
+    library = 'fa',
+    markerColor = traffic_airports$color
   )
   
   carte_interactive <- leaflet(traffic_airports) %>% addTiles() %>%
     addAwesomeMarkers(
       icon=icons[],
-      label=~paste0(Nom, "", " (",Code.OACI, ") ")
+      label=~paste0(Nom, "", " (",Code.OACI, ") : ", traffic, " voyageurs")
     )
   return(carte_interactive)
 }
