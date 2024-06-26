@@ -1,21 +1,20 @@
 main_color <- "black"
-
 input_date <- shinyWidgets::airDatepickerInput(
   "date",
-  label = "Select a month",
+  label = "Select one or several months",
   value = "2019-01-01",
+  multiple = TRUE,
   view = "months",
   minView = "months",
   minDate = "2018-01-01",
   maxDate = "2022-12-01",
   dateFormat = "MMMM yyyy",
-  language = "fr"
+  language = "en"
 )
-
 input_airport <- selectInput(
   "select",
-  "Aéroport choisi",
-  choices = liste_aeroports,
+  NULL,#means no label, otherwise just write "months selected" instead of NULL
+  choices = list_airports,
   selected = default_airport
 )
 
@@ -23,18 +22,18 @@ ui <- page_navbar(
   title = "Air traffic in France",
   bg = main_color,
   inverse = TRUE,
-  header = em("Realized at the funathon 2024, organized by Insee and DGAC"),
+  header = em("App realized for the Funathon 2024 by Insee and DGAC"),
   layout_columns(
     card(
       HTML(
-        '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️ Retourner au tutoriel pour construire cette application</a>'
+        '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️Have fun making this app yourself in french !</a>'
       ),
       input_date,
       gt_output(outputId = "table")
     ),
     layout_columns(
       card(leafletOutput("carte")),
-      card(card_header("Traffic in an airport", class = "bg-dark"),
+      card(card_header("Airport selection", class = "bg-dark"),
            input_airport,
            plotlyOutput("lineplot")
           ),
@@ -42,6 +41,4 @@ ui <- page_navbar(
     ),
     cols_widths = c(12,12,12)
   )
-  
 )
-
