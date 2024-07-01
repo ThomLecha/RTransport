@@ -1,8 +1,6 @@
-# Global variables ----
-YEARS_LIST <- 2018:2022
-MONTHS_LIST = 1:12
-
+#rm(list = ls())
 # Environment ----
+library(arrow)
 library(readr)
 library(dplyr)
 library(lubridate)
@@ -17,13 +15,17 @@ library(bslib)
 source("./functions.R")
 
 # LOAD DATA----
-urls <- create_data_list("./sources.yml")
-pax_apt_all <- import_airports_data(unlist(urls$airports))
-pax_cie_all <- import_airlines_data(unlist(urls$airlines))
-pax_lsn_all <- import_airlinks_data(unlist(urls$links))
-airports_location <- st_read(urls$geojson$airport)
+n = stringr::str_locate(getwd(),"Documents")[2]
+outputdir = paste0(stringr::str_sub(getwd(),1,n),"/data")
+datatype = c("apt", "cie", "lsn")
+datapath = paste0(outputdir,"/asp-", datatype,".parquet")
+pax_apt_all = clean_dataframe(read_parquet(datapath[1]))
+pax_cie_all = clean_dataframe(read_parquet(datapath[2]))
+pax_lsn_all = clean_dataframe(read_parquet(datapath[1]))
+airports_location <- st_read("airports.geojson")
 list_airports <- unique(pax_apt_all$apt)
-default_airport <- list_airports[1]
+#default_airport <- list_airports[1]
+default_airport <- "LFPG"
 
 # Dataframe required for the app ------------------------
 traffic_airports <- pax_apt_all %>%

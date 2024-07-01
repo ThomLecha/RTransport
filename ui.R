@@ -6,8 +6,8 @@ input_date <- shinyWidgets::airDatepickerInput(
   multiple = TRUE,
   view = "months",
   minView = "months",
-  minDate = "2018-01-01",
-  maxDate = "2022-12-01",
+  minDate = "2010-01-01",
+  maxDate = "2023-12-01",
   dateFormat = "MMMM yyyy",
   language = "en"
 )
@@ -26,7 +26,7 @@ ui <- page_navbar(
   layout_columns(
     card(
       HTML(
-        '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️Have fun making this app yourself in french !</a>'
+        '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️Have fun making this app yoursel,tuto in french !</a>'
       ),
       input_date,
       gt_output(outputId = "table")
