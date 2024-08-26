@@ -40,6 +40,13 @@ summary_stat_links <- function(data){
     ungroup()
   return(agg_data)
 }
+get_recent_date <- function(df, anmois) {
+  # Trouve la date la plus récente
+  x=max(df$anmois)
+  recent_date=as.Date(paste0(x, "01"), format = "%Y%m%d")
+  # Retourne la date en format "YYYYMM"
+  return(recent_date)
+}
 
 #TABLE----
 create_table_airports <- function(stats_airports){

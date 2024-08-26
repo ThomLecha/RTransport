@@ -2,12 +2,12 @@ main_color <- "black"
 input_date <- shinyWidgets::airDatepickerInput(
   "date",
   label = "Select one or several months",
-  value = "2023-01-01",
+  value = date_max,
   multiple = TRUE,
   view = "months",
   minView = "months",
   minDate = "2010-01-01",
-  maxDate = "2023-12-01",
+  maxDate = date_max,#see in main script in global.R
   dateFormat = "MMMM yyyy",
   language = "en"
 )
@@ -26,7 +26,7 @@ ui <- page_navbar(
   layout_columns(
     card(
       HTML(
-        '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️Have fun making this app yoursel,tuto in french !</a>'
+        '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️Have fun by making this app yourself</a>'
       ),
       input_date,
       gt_output(outputId = "table")
