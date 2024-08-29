@@ -22,7 +22,7 @@ if (!exists("pax_apt_all")){ # Avoid loading libraries, functions and data if al
   source("./load_data.R")
 }
 
-# User Interface UI ----
+# UI User Interface ----
 
 # User Interface Inputs
 main_color <- "black"
@@ -52,17 +52,28 @@ ui <- dashboardPage(
   ),
   
   # Sidebar Menu
-  dashboardSidebar(
-    sidebarMenu(
-      menuItem("Airport traffic", tabName = "apt", icon = icon("passport")),
-      menuItem("Company traffic", tabName = "cie", icon = icon("plane")),
-      menuItem("CO2 emissions", tabName = "co2", icon = icon("temperature-high")),
-      menuItem("Price index", tabName = "iptap", icon = icon("euro-sign")),
-      if (user_app) {
-        menuItem("User", tabName = "usr", icon = icon("user"))
-      }
+  if (user_app) {
+    dashboardSidebar(
+      sidebarMenu(
+        menuItem("Airport traffic", tabName = "apt", icon = icon("passport")),
+        menuItem("Company traffic", tabName = "cie", icon = icon("plane")),
+        menuItem("CO2 emissions", tabName = "co2", icon = icon("temperature-high")),
+        menuItem("Price index", tabName = "iptap", icon = icon("euro-sign")),
+        menuItem("Detailed traffic", tabName = "traffic", icon = icon("user")),
+        menuItem("Search apt or cie", tabName = "search", icon = icon("user"))
+        )
+      )
+  } else {
+    dashboardSidebar(
+      sidebarMenu(
+        menuItem("Airport traffic", tabName = "apt", icon = icon("passport")),
+        menuItem("Company traffic", tabName = "cie", icon = icon("plane")),
+        menuItem("CO2 emissions", tabName = "co2", icon = icon("temperature-high")),
+        menuItem("Price index", tabName = "iptap", icon = icon("euro-sign"))
+        )
     )
-  ),
+  }
+  ,
   
   # Main Body Content
   dashboardBody(
@@ -78,7 +89,7 @@ ui <- dashboardPage(
                     '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️Have fun by making this app yourself</a>'
                   ),
                   input_date,
-                  DT::DTOutput("tableDT")
+                  DT::DTOutput("table_traffic_apt")
                 ),
                 layout_columns(
                   card(leafletOutput("carte")),
@@ -110,8 +121,8 @@ ui <- dashboardPage(
               p("Cette section présente les données disponibles.")
       ),
       
-      # User's Page
-      tabItem(tabName = "usr",
+      # Detailed traffic
+      tabItem(tabName = "traffic",
               verbatimTextOutput(outputId = "texte"),
               checkboxGroupInput("mon", "Mois:",
                                  month_char,
@@ -119,27 +130,50 @@ ui <- dashboardPage(
               radioButtons("yea", "Année:",
                            year_char,
                            inline = T),
-              DT::dataTableOutput("table_user"),
+              DT::dataTableOutput("table_traffic")
+      ),
+      
+      # Search airport or airline
+      tabItem(tabName = "search",
               textInput(
                 inputId = "airport_lib",
-                label = "airport",
+                label = "Airport",
                 value = ""
               ),
-              DT::dataTableOutput("search_apt_user"),
+              DT::dataTableOutput("table_search_apt"),
               textInput(
                 inputId = "company_lib",
-                label = "company",
+                label = "Company",
                 value = ""
               ),
-              DT::dataTableOutput("search_cie_user")
+              DT::dataTableOutput("table_search_cie")
+              )
       )
     )
   )
-)
 
-# Server ----
+# SERVER ----
 server <- function(input, output, session) {
-  table_links = reactive({
+  output$carte <- renderLeaflet(
+    map_leaflet_airport(
+      pax_apt_all, airports_location,
+      month(input$date), year(input$date)
+    )
+  )
+  output$lineplot <- renderPlotly(
+    plot_airport_line(pax_apt_all, input$select)
+  )
+  # REACTIVE
+  dfsearchapt = reactive({
+    return(apt %>% filter(str_detect(simplify_text(apt$label), input$airport_lib)|str_detect(simplify_text(apt$aptname), input$airport_lib)|str_detect(simplify_text(apt$aptoaci), input$airport_lib)|str_detect(simplify_text(apt$aptiata), input$airport_lib)|str_detect(simplify_text(apt$apays), input$airport_lib)|str_detect(simplify_text(apt$countrynameoaci), input$airport_lib)))
+  })
+  dfsearchcie = reactive({
+    return(cie %>% filter(str_detect(simplify_text(cie$ciecodeoaci), input$company_lib)|str_detect(simplify_text(cie$cieiata), input$company_lib)|str_detect(simplify_text(cie$cielabel), input$company_lib)|str_detect(simplify_text(cie$ciepayinfo), input$company_lib)))
+  })
+  dftraffic = reactive({
+    return(pax_apt %>% filter((mois %in% input$mon)&(an == input$yea)))
+  })
+  dftrafficapt = reactive({
     pax_apt_all %>% 
       filter(mois %in% month(input$date), an %in% year(input$date)) %>% 
       group_by(apt, apt_nom) %>%
@@ -151,67 +185,40 @@ server <- function(input, output, session) {
       arrange(desc(pax)) %>%
       ungroup()
   })
-  dfapt = reactive({
-    return(pax_apt %>% filter((mois %in% input$mon)&(an == input$yea)))
-  })
-  dfsearchapt = reactive({
-    return(apt %>% filter(str_detect(simplify_text(apt$label), input$airport_lib)|str_detect(simplify_text(apt$aptname), input$airport_lib)|str_detect(simplify_text(apt$aptoaci), input$airport_lib)|str_detect(simplify_text(apt$aptiata), input$airport_lib)|str_detect(simplify_text(apt$apays), input$airport_lib)|str_detect(simplify_text(apt$countrynameoaci), input$airport_lib)))
-  })
-  dfsearchcie = reactive({
-    return(cie %>% filter(str_detect(simplify_text(cie$ciecodeoaci), input$company_lib)|str_detect(simplify_text(cie$cieiata), input$company_lib)|str_detect(simplify_text(cie$cielabel), input$company_lib)|str_detect(simplify_text(cie$ciepayinfo), input$company_lib)))
-  })
-  
-  output$tableDT <- DT::renderDataTable({
-    DT::datatable(table_links())
-  })
-  
-  output$search_apt_user <- DT::renderDataTable({
+  output$table_search_apt <- DT::renderDataTable({
     DT::datatable(dfsearchapt())
   })
-  
-  output$search_cie_user <- DT::renderDataTable({
+  output$table_search_cie <- DT::renderDataTable({
     DT::datatable(dfsearchcie())
   })
-  
-  output$carte <- renderLeaflet(
-    map_leaflet_airport(
-      pax_apt_all, airports_location,
-      month(input$date), year(input$date)
-    )
-  )
-  
-  output$lineplot <- renderPlotly(
-    plot_airport_line(pax_apt_all, input$select)
-  )
-  
-  output$table_user <- DT::renderDataTable(DT::datatable({
+  output$table_traffic <- DT::renderDataTable(DT::datatable({
     data = bind_rows(
-      dfapt() %>%
+      dftraffic() %>%
         filter(fluxindic==1) %>%
         summarise(pax = round(sum(pax, na.rm = T)/1000000,3)),
-      dfapt() %>%
+      dftraffic() %>%
         filter(fluxindic==1) %>%
         group_by(re) %>%
         summarise(pax = round(sum(pax, na.rm = T)/1000000,3)) %>%
         ungroup,
-      dfapt() %>%
+      dftraffic() %>%
         filter(fluxindic==1) %>%
         group_by(faisceau) %>%
         summarise(pax = round(sum(pax, na.rm = T)/1000000,3)) %>%
         ungroup,
-      dfapt() %>%
+      dftraffic() %>%
         filter(fluxindic==1) %>%
         group_by(routes_det) %>%
         #group_by(faisceau, e3fscapt2) %>%
         #group_by(bregionsueapt1, bregionsueapt2) %>%
         summarise(pax = round(sum(pax, na.rm = T)/1000000,3)) %>%
         ungroup,
-      dfapt() %>%
+      dftraffic() %>%
         filter(fluxindic==1) %>%
         group_by(cietype) %>%
         summarise(pax = round(sum(pax, na.rm = T)/1000000,3)) %>%
         ungroup,
-      dfapt() %>%
+      dftraffic() %>%
         filter((fluxindic==1)) %>%
         group_by(countrynameoaciapt1, countrynameoaciapt2) %>%
         summarise(pax = round(sum(pax, na.rm = T)/1000000,3)) %>%
@@ -242,6 +249,9 @@ server <- function(input, output, session) {
       'selectAll', 'selectNone', 'selectRows', 'selectColumns', 'selectCells'
     )
   )))
+  output$table_traffic_apt <- DT::renderDataTable({
+    DT::datatable(dftrafficapt())
+  })
 }
 
 # Launch Shiny App ----

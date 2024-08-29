@@ -26,7 +26,8 @@ datapath_iptap = "https://www.data.gouv.fr/fr/datasets/r/ca158a15-0f41-4528-b370
 pax_apt_all = clean_dataframe(read_parquet(datapath_apt))
 pax_cie_all = clean_dataframe(read_parquet(datapath_cie))
 #pax_lsn_all = clean_dataframe(read_parquet(datapath_lsn))
-iptap = read.csv(datapath_iptap, header=TRUE,sep=";",dec=",")
+iptap = read.csv(datapath_iptap, header=TRUE,sep=";",dec=",") %>% 
+  mutate(ANMOIS = ym(as.character(ANMOIS)))
 
 recent_date = get_recent_date(pax_apt_all,"anmmois")
 date_max=as.character(recent_date)
