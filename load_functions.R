@@ -65,17 +65,36 @@ map_leaflet_airport <- function(df, airports_location, months, years){
 
 #PLOT AIRPORT LINE----
 plot_airport_line <- function(df, selected_airport){
-  traffic_airports <- df %>%
-    mutate(traffic = apt_pax_dep + apt_pax_tr + apt_pax_arr) %>%
-    filter(apt %in% selected_airport) %>%
-    mutate(
-      date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d")
-    )
+  traffic_airports <- df %>% filter(apt %in% selected_airport)
   figure_plotly <- traffic_airports %>%
     plot_ly(
-      x = ~date, y = ~traffic,
+      x = ~date, y = ~apt_pax,
       text = ~apt_nom,
       hovertemplate = paste("<i>Airport:</i> %{text}<br>Traffic: %{y}") ,
       type = 'scatter', mode = 'lines+markers')
+  return(figure_plotly)
+}
+
+# ADDITIONNAL FUNCTIONS ----
+
+#PLOT INDEX PRICE----
+#str(iptap)
+#selected_flows = c("fra_ens","met_inter_met","met_inter_om")
+#df=iptap
+plot_price_index = function(df, selected_flows){
+  price = df %>%
+    select("date",all_of(selected_flows))
+  data_long <- melt(price, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
+    
+  #figure_plotly <- price %>%
+  figure_plotly <- data_long %>%
+    plot_ly(
+      x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%
+    layout(
+      title = 'Évolution par faisceau géographique',
+      xaxis = list(title = 'Date'),
+      yaxis = list(title = 'IPTAP'),
+      legend = list(title = list(text = '<b>Faisceaux</b>'))
+    )
   return(figure_plotly)
 }

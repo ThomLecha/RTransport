@@ -1,22 +1,23 @@
 ##################################
-###         R TRANSPORT        ###
+###    R TRANSPORT FRANCE      ###
 ##################################
 
 # rm(list = ls())
 if (!exists("pax_apt_all")){ # Avoid loading libraries, functions and data if already loaded
   # Libraries ----
-  library(arrow)
+  library(arrow) # lire et écrire au format parquet
   library(bslib)
   library(dplyr)
   library(ggplot2)
-  library(leaflet)
-  library(lubridate)
-  library(plotly)
+  library(leaflet) # créer des cartes
+  library(lubridate) # manipuler les dates
+  library(plotly) # créer des graphiques interactifs
   library(readr)
+  library(reshape2)# transformer les données de format large à format long (nécessaire pour tracer toutes les variables sur le même graphique)
   library(sf)
   library(shiny)
   library(shinydashboard)
-  library(stringr)
+  library(stringr) # manipuler les chaînes de caractères
   # Load functions & data, including global variables ----
   source("./load_functions.R")
   source("./load_data.R")
@@ -46,21 +47,30 @@ input_airport <- selectInput(
   selected = default_airport
 )
 
+input_flows <- selectInput(
+  "select",
+  NULL,#means no label, otherwise just write "months selected" instead of NULL
+  choices = list_flows,
+  selected = default_flows,
+  multiple = TRUE
+)
+
+
 # User Interface define
 ui <- dashboardPage(
   dashboardHeader(title = "R Transport"
   ),
   
-  # Sidebar Menu
+  # SIDEBAR MENU ----
   if (user_app) {
     dashboardSidebar(
       sidebarMenu(
-        menuItem("Airport traffic", tabName = "apt", icon = icon("passport")),
-        menuItem("Company traffic", tabName = "cie", icon = icon("plane")),
-        menuItem("CO2 emissions", tabName = "co2", icon = icon("temperature-high")),
-        menuItem("Price index", tabName = "iptap", icon = icon("euro-sign")),
-        menuItem("Detailed traffic", tabName = "traffic", icon = icon("user")),
-        menuItem("Search apt or cie", tabName = "search", icon = icon("user"))
+        menuItem("Trafic des aéroports français", tabName = "apt", icon = icon("passport")),
+        menuItem("Trafic des compagnies", tabName = "cie", icon = icon("plane")),
+        menuItem("Emissions de CO2", tabName = "co2", icon = icon("temperature-high")),
+        menuItem("Indice des prix du transport aérien", tabName = "iptap", icon = icon("euro-sign")),
+        menuItem("Trafic par faisceau", tabName = "traffic", icon = icon("user")),
+        menuItem("Recherche apt ou cie", tabName = "search", icon = icon("user"))
         )
       )
   } else {
@@ -75,18 +85,18 @@ ui <- dashboardPage(
   }
   ,
   
-  # Main Body Content
+  # MAIN BODY CONTENT ----
   dashboardBody(
     tabItems(
-      # Airport page
+      # Airport traffic
       tabItem(tabName = "apt",
-              h2("Realized for the Funathon 2024, Insee & DGAC"),
+              h2("Tableau de bord du trafic aérien réalisé au Funathon 2024 de Insee & DGAC"),
               bg = main_color,
               inverse = TRUE,
               layout_columns(
                 card(
                   HTML(
-                    '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️Have fun by making this app yourself</a>'
+                    '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️Have fun by making this app yourself in R or in Python</a>'
                   ),
                   input_date,
                   DT::DTOutput("table_traffic_apt")
@@ -95,7 +105,7 @@ ui <- dashboardPage(
                   card(leafletOutput("carte")),
                   card(card_header("Airport selection", class = "bg-dark"),
                        input_airport,
-                       plotlyOutput("lineplot")
+                       plotlyOutput("plot_apt")
                   ),
                   col_widths = c(12,12)
                 ),
@@ -103,22 +113,21 @@ ui <- dashboardPage(
               )
       ),
       
-      # Company Page
+      # Company traffic
       tabItem(tabName = "cie",
-              h2("Données"),
-              p("Cette section présente les données disponibles.")
+              h2("Trafic aérien des compagnies, en millions de passagers, source DGAC"),
       ),
       
       # CO2 emissions
       tabItem(tabName = "co2",
-              h2("Données"),
-              p("Cette section présente les données disponibles.")
+              h2("Emissions de CO2 du trafic aérien, en million de tonnes, source DGAC"),
       ),
       
       # Price index
       tabItem(tabName = "iptap",
-              h2("Données"),
-              p("Cette section présente les données disponibles.")
+              h2("Indice des prix du transport aérien - IPTAP, source DGAC"),
+              input_flows,
+              plotlyOutput("plot_price")
       ),
       
       # Detailed traffic
@@ -160,10 +169,13 @@ server <- function(input, output, session) {
       month(input$date), year(input$date)
     )
   )
-  output$lineplot <- renderPlotly(
+  output$plot_apt <- renderPlotly(
     plot_airport_line(pax_apt_all, input$select)
   )
-  # REACTIVE
+  output$plot_price <- renderPlotly(
+    plot_price_index(iptap, input$select)
+  )
+  # REACTIVES & OUTPUTS ----
   dfsearchapt = reactive({
     return(apt %>% filter(str_detect(simplify_text(apt$label), input$airport_lib)|str_detect(simplify_text(apt$aptname), input$airport_lib)|str_detect(simplify_text(apt$aptoaci), input$airport_lib)|str_detect(simplify_text(apt$aptiata), input$airport_lib)|str_detect(simplify_text(apt$apays), input$airport_lib)|str_detect(simplify_text(apt$countrynameoaci), input$airport_lib)))
   })

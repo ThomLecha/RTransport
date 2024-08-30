@@ -23,17 +23,21 @@ datapath_cie = "https://www.data.gouv.fr/fr/datasets/r/314cfa80-fe1f-4834-b18e-9
 #datapath_lsn = "https://www.data.gouv.fr/fr/datasets/r/a3947c3b-36ae-4aa0-bee2-323f6d684f0e"
 datapath_iptap = "https://www.data.gouv.fr/fr/datasets/r/ca158a15-0f41-4528-b370-282ce04e22d4"
 
-pax_apt_all = clean_dataframe(read_parquet(datapath_apt))
+pax_apt_all = clean_dataframe(read_parquet(datapath_apt)) %>% 
+  mutate(apt_pax = apt_pax_dep + apt_pax_tr + apt_pax_arr) %>% 
+  mutate(date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d"))
 pax_cie_all = clean_dataframe(read_parquet(datapath_cie))
 #pax_lsn_all = clean_dataframe(read_parquet(datapath_lsn))
-iptap = read.csv(datapath_iptap, header=TRUE,sep=";",dec=",") %>% 
-  mutate(ANMOIS = ym(as.character(ANMOIS)))
+iptap = clean_dataframe(read.csv(datapath_iptap, header=TRUE,sep=";",dec=",")) %>% 
+  mutate(date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d"))
 
 recent_date = get_recent_date(pax_apt_all,"anmmois")
 date_max=as.character(recent_date)
 airports_location <- st_read("airports.geojson")
 list_airports <- unique(pax_apt_all$apt)
 default_airport <- "LFPG"
+list_flows <- setdiff(names(iptap), c("anmois","date","an","mois"))
+default_flows <- "fra_ens"
 
 # Dataframe required for the app ------------------------
 traffic_airports <- pax_apt_all %>%
