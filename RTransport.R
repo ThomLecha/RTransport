@@ -4,21 +4,19 @@
 
 # rm(list = ls())
 if (!exists("pax_apt_all")){ # Avoid loading libraries, functions and data if already loaded
-  # Libraries ----
-  library(arrow) # lire et écrire au format parquet
+  library(arrow) # read and write parquet
   library(bslib)
   library(dplyr)
   library(ggplot2)
-  library(leaflet) # créer des cartes
-  library(lubridate) # manipuler les dates
-  library(plotly) # créer des graphiques interactifs
+  library(leaflet) # realize maps
+  library(lubridate) # handle dates
+  library(plotly) # creates interactives graphs
   library(readr)
-  library(reshape2)# transformer les données de format large à format long (nécessaire pour tracer toutes les variables sur le même graphique)
+  library(reshape2)# transform data in long format to draw variables on the same graph
   library(sf)
   library(shiny)
   library(shinydashboard)
-  library(stringr) # manipuler les chaînes de caractères
-  # Load functions & data, including global variables ----
+  library(stringr) # bring useful string functions
   source("./load_functions.R")
   source("./load_data.R")
 }
@@ -41,14 +39,14 @@ input_date <- shinyWidgets::airDatepickerInput(
 )
 
 input_airport <- selectInput(
-  "select",
+  "select_apt",
   NULL,#means no label, otherwise just write "months selected" instead of NULL
   choices = list_airports,
   selected = default_airport
 )
 
 input_flows = selectInput(
-  "select",
+  "select_flows",
   NULL,#means no label, otherwise just write "months selected" instead of NULL
   choices = list_flows,
   selected = default_flows,
@@ -69,8 +67,8 @@ ui <- dashboardPage(
         menuItem("Trafic des compagnies", tabName = "cie", icon = icon("plane")),
         menuItem("Emissions de CO2", tabName = "co2", icon = icon("temperature-high")),
         menuItem("Indice des prix du transport aérien", tabName = "iptap", icon = icon("euro-sign")),
-        menuItem("Trafic par faisceau", tabName = "traffic", icon = icon("user")),
-        menuItem("Recherche apt ou cie", tabName = "search", icon = icon("user"))
+        menuItem("Trafic par faisceau", tabName = "traffic", icon = icon("key")),
+        menuItem("Recherche apt ou cie", tabName = "search", icon = icon("key"))
         )
       )
   } else {
@@ -172,10 +170,10 @@ server <- function(input, output, session) {
     )
   )
   output$plot_apt <- renderPlotly(
-    plot_airport_line(pax_apt_all, input$select)
+    plot_airport_line(pax_apt_all, input$select_apt)
   )
   output$plot_price <- renderPlotly(
-    plot_price_index(iptap, input$select)
+    plot_price_index(iptap, input$select_flows)
   )
   # REACTIVES & OUTPUTS ----
   dfsearchapt = reactive({
@@ -192,7 +190,7 @@ server <- function(input, output, session) {
       filter(mois %in% month(input$date), an %in% year(input$date)) %>% 
       group_by(apt, apt_nom) %>%
       summarise(
-        pax = round(sum(apt_pax_dep+apt_pax_arr+apt_pax_tr, na.rm = T)/1000000,3),
+        pax = round(sum(apt_pax, na.rm = T)/1000000,3),
         depart = round(sum(apt_pax_dep, na.rm = T)/1000000,3),
         arriv = round(sum(apt_pax_arr, na.rm = T)/1000000,3),
         transit = round(sum(apt_pax_tr, na.rm = T)/1000000,3)) %>%
