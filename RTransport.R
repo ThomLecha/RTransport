@@ -45,12 +45,21 @@ input_airport <- selectInput(
   selected = default_airport
 )
 
-input_flows = selectInput(
-  "select_flows",
+input_price_flows = selectInput(
+  "select_price_flows",
   #NULL,#means no label, otherwise just write "months selected" instead of NULL
   label = "Faisceaux géographiques",
-  choices = list_flows,
-  selected = default_flows,
+  choices = list_price_flows,
+  selected = default_price_flows,
+  multiple = TRUE
+)
+
+input_traffic_flows = selectInput(
+  "select_traffic_flows",
+  #NULL,#means no label, otherwise just write "months selected" instead of NULL
+  label = "Faisceaux géographiques",
+  choices = list_traffic_flows,
+  selected = default_traffic_flows,
   multiple = TRUE
 )
 
@@ -131,7 +140,7 @@ ui <- dashboardPage(
       tabItem(tabName = "co2",
               h2("Emissions de CO2 du trafic aérien, en million de tonnes, source DGAC"),
               HTML(
-                '<a href="https://www.ecologie.gouv.fr/politiques-publiques/emissions-gazeuses-liees-trafic-aerien">👉️bilan dse émissions gazeuses du transport aérien</a>'
+                '<a href="https://www.ecologie.gouv.fr/politiques-publiques/emissions-gazeuses-liees-trafic-aerien">👉️bilan des émissions gazeuses du transport aérien</a>'
               )
       ),
       
@@ -141,12 +150,14 @@ ui <- dashboardPage(
               HTML(
                 '<a href="https://www.data.gouv.fr/fr/datasets/indices-des-prix-du-transport-aerien-de-passagers/">👉 séries accessibles sur data.gouv.fr</a>'
               ),
-              input_flows,
+              input_price_flows,
               plotlyOutput("plot_price")
       ),
       
       # Detailed traffic
       tabItem(tabName = "traffic",
+              input_traffic_flows,
+              plotlyOutput("plot_traffic"),
               verbatimTextOutput(outputId = "texte"),
               checkboxGroupInput("mon", "Mois:",
                                  month_char,
@@ -188,7 +199,10 @@ server <- function(input, output, session) {
     plot_airport_line(pax_apt_all, input$select_apt)
   )
   output$plot_price <- renderPlotly(
-    plot_price_index(iptap, input$select_flows)
+    plot_price_index(input$select_price_flows)
+  )
+  output$plot_traffic <- renderPlotly(
+    plot_traffic_flows(input$select_traffic_flows)
   )
   # REACTIVES & OUTPUTS ----
   dfsearchapt = reactive({

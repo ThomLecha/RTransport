@@ -77,18 +77,37 @@ plot_airport_line <- function(df, selected_airport){
 
 # ADDITIONNAL FUNCTIONS ----
 
-#PLOT INDEX PRICE----
-plot_price_index = function(df, selected_flows){
-  price = df %>% select("date",all_of(selected_flows))
-  data_long <- melt(price, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
+#PLOT PRICE INDEX ----
+plot_price_index = function(selected_price_flows){
+  df = iptap %>% select("date",all_of(selected_price_flows))
+  data_long = melt(df, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
+  
+  figure_plotly <- data_long %>%
+    plot_ly(
+      x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%
+    layout(
+      title = 'Évolution des prix par faisceau géographique',
+      xaxis = list(title = 'Date'),
+      yaxis = list(title = 'IPTAP'),
+      legend = list(title = list(text = '<b>Faisceaux</b>'))
+    )
+  return(figure_plotly)
+}
+
+#selected_traffic_flows = default_traffic_flows
+#df = pax_apt
+  #PLOT TRAFFIC FLOWS----
+plot_traffic_flows = function(selected_traffic_flows){
+  df = traffic_flows %>% select("date",all_of(selected_traffic_flows))
+  data_long = melt(df, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
     
   figure_plotly <- data_long %>%
     plot_ly(
       x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%
     layout(
-      title = 'Évolution par faisceau géographique',
+      title = 'Évolution du trafic par faisceau géographique',
       xaxis = list(title = 'Date'),
-      yaxis = list(title = 'IPTAP'),
+      yaxis = list(title = 'Mpax'),
       legend = list(title = list(text = '<b>Faisceaux</b>'))
     )
   return(figure_plotly)
