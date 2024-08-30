@@ -38,6 +38,9 @@ list_airports <- unique(pax_apt_all$apt)
 default_airport <- "LFPG"
 list_flows <- setdiff(names(iptap), c("anmois","date","an","mois"))
 default_flows <- "fra_ens"
+default_search_apt = "orly"
+default_search_cie = "tvf"
+
 
 # Dataframe required for the app ------------------------
 traffic_airports <- pax_apt_all %>%

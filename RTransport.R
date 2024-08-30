@@ -27,7 +27,7 @@ if (!exists("pax_apt_all")){ # Avoid loading libraries, functions and data if al
 main_color <- "black"
 input_date <- shinyWidgets::airDatepickerInput(
   "date",
-  label = "Select one or several months",
+  label = "Période d'observation",
   value = date_max,
   multiple = TRUE,
   view = "months",
@@ -47,7 +47,8 @@ input_airport <- selectInput(
 
 input_flows = selectInput(
   "select_flows",
-  NULL,#means no label, otherwise just write "months selected" instead of NULL
+  #NULL,#means no label, otherwise just write "months selected" instead of NULL
+  label = "Faisceaux géographiques",
   choices = list_flows,
   selected = default_flows,
   multiple = TRUE
@@ -88,20 +89,25 @@ ui <- dashboardPage(
     tabItems(
       # Airport traffic
       tabItem(tabName = "apt",
-              h2("Tableau de bord du trafic aérien réalisé au Funathon 2024 Insee & DGAC"),
+              h2("Tableau de bord du trafic aérien réalisé lors du Funathon 2024 Insee & DGAC"),
               bg = main_color,
               inverse = TRUE,
               layout_columns(
                 card(
                   HTML(
-                    '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️Have fun by making this app yourself in R or in Python</a>'
+                    '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️Apprendre à faire ce type de tableau de bord en R ou Python</a>'
                   ),
+                  HTML(
+                    '<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️séries accessibles sur data.gouv.fr</a>'
+                  ),
+                  
+                  
                   input_date,
                   DT::DTOutput("table_traffic_apt")
                 ),
                 layout_columns(
                   card(leafletOutput("carte")),
-                  card(card_header("Airport selection", class = "bg-dark"),
+                  card(card_header("Aéroports", class = "bg-dark"),
                        input_airport,
                        plotlyOutput("plot_apt")
                   ),
@@ -114,6 +120,9 @@ ui <- dashboardPage(
       # Company traffic
       tabItem(tabName = "cie",
               h2("Trafic aérien des compagnies, en millions de passagers, source DGAC"),
+              HTML(
+                '<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️séries accessibles sur data.gouv.fr</a>'
+              ),
               input_date,
               DT::DTOutput("table_traffic_cie")
       ),
@@ -121,11 +130,17 @@ ui <- dashboardPage(
       # CO2 emissions
       tabItem(tabName = "co2",
               h2("Emissions de CO2 du trafic aérien, en million de tonnes, source DGAC"),
+              HTML(
+                '<a href="https://www.ecologie.gouv.fr/politiques-publiques/emissions-gazeuses-liees-trafic-aerien">👉️bilan dse émissions gazeuses du transport aérien</a>'
+              )
       ),
       
       # Price index
       tabItem(tabName = "iptap",
               h2("Indice des prix du transport aérien - IPTAP, source DGAC"),
+              HTML(
+                '<a href="https://www.data.gouv.fr/fr/datasets/indices-des-prix-du-transport-aerien-de-passagers/">👉 séries accessibles sur data.gouv.fr</a>'
+              ),
               input_flows,
               plotlyOutput("plot_price")
       ),
@@ -147,13 +162,13 @@ ui <- dashboardPage(
               textInput(
                 inputId = "airport_lib",
                 label = "Airport",
-                value = ""
+                value = default_search_apt
               ),
               DT::dataTableOutput("table_search_apt"),
               textInput(
                 inputId = "company_lib",
                 label = "Company",
-                value = ""
+                value = default_search_cie
               ),
               DT::dataTableOutput("table_search_cie")
               )
