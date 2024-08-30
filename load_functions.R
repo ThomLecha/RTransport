@@ -78,15 +78,10 @@ plot_airport_line <- function(df, selected_airport){
 # ADDITIONNAL FUNCTIONS ----
 
 #PLOT INDEX PRICE----
-#str(iptap)
-#selected_flows = c("fra_ens","met_inter_met","met_inter_om")
-#df=iptap
 plot_price_index = function(df, selected_flows){
-  price = df %>%
-    select("date",all_of(selected_flows))
+  price = df %>% select("date",all_of(selected_flows))
   data_long <- melt(price, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
     
-  #figure_plotly <- price %>%
   figure_plotly <- data_long %>%
     plot_ly(
       x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%

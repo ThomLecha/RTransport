@@ -47,7 +47,7 @@ input_airport <- selectInput(
   selected = default_airport
 )
 
-input_flows <- selectInput(
+input_flows = selectInput(
   "select",
   NULL,#means no label, otherwise just write "months selected" instead of NULL
   choices = list_flows,
@@ -90,7 +90,7 @@ ui <- dashboardPage(
     tabItems(
       # Airport traffic
       tabItem(tabName = "apt",
-              h2("Tableau de bord du trafic aérien réalisé au Funathon 2024 de Insee & DGAC"),
+              h2("Tableau de bord du trafic aérien réalisé au Funathon 2024 Insee & DGAC"),
               bg = main_color,
               inverse = TRUE,
               layout_columns(
@@ -116,6 +116,8 @@ ui <- dashboardPage(
       # Company traffic
       tabItem(tabName = "cie",
               h2("Trafic aérien des compagnies, en millions de passagers, source DGAC"),
+              input_date,
+              DT::DTOutput("table_traffic_cie")
       ),
       
       # CO2 emissions
@@ -197,6 +199,14 @@ server <- function(input, output, session) {
       arrange(desc(pax)) %>%
       ungroup()
   })
+  dftrafficcie = reactive({
+    pax_cie_all %>% 
+      filter(mois %in% month(input$date), an %in% year(input$date)) %>% 
+      group_by(cie, cie_nom) %>%
+      summarise(pax = round(sum(cie_pax, na.rm = T)/1000000,3)) %>%
+      arrange(desc(pax)) %>%
+      ungroup()
+  })
   output$table_search_apt <- DT::renderDataTable({
     DT::datatable(dfsearchapt())
   })
@@ -263,6 +273,9 @@ server <- function(input, output, session) {
   )))
   output$table_traffic_apt <- DT::renderDataTable({
     DT::datatable(dftrafficapt())
+  })
+  output$table_traffic_cie <- DT::renderDataTable({
+    DT::datatable(dftrafficcie())
   })
 }
 
