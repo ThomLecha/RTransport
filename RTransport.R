@@ -42,7 +42,8 @@ input_airport <- selectInput(
   "select_apt",
   NULL,#means no label, otherwise just write "months selected" instead of NULL
   choices = list_airports,
-  selected = "LFPG"
+  selected = "LFPG",
+  multiple = TRUE
 )
 
 input_price_flows = selectInput(
@@ -108,7 +109,6 @@ ui <- dashboardPage(
                   HTML(
                     '<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️séries accessibles sur data.gouv.fr</a>'
                   ),
-                  
                   
                   input_date,
                   DT::DTOutput("table_traffic_apt")
@@ -190,12 +190,11 @@ ui <- dashboardPage(
 server <- function(input, output, session) {
   output$carte <- renderLeaflet(
     map_leaflet_airport(
-      pax_apt_all, airports_location,
       month(input$date), year(input$date)
     )
   )
   output$plot_apt <- renderPlotly(
-    plot_airport_line(pax_apt_all, input$select_apt)
+    plot_airport_line(input$select_apt)
   )
   output$plot_price <- renderPlotly(
     plot_price_index(input$select_price_flows)

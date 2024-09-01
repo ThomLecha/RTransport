@@ -26,9 +26,9 @@ get_recent_date <- function(df, anmois) { # Find most recent date
 }
 
 #MAP LEAFLET AIRPORT----
-map_leaflet_airport <- function(df, airports_location, months, years){
+map_leaflet_airport <- function(months, years){
   palette <- c("green", "orange", "darkred")
-  traffic_date <- df %>%
+  traffic_date <- pax_apt_all %>%
     mutate(
       date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d")
     ) %>%
@@ -45,7 +45,7 @@ map_leaflet_airport <- function(df, airports_location, months, years){
     ) %>% 
     mutate(color = palette[volume])
   
-  traffic_airports <- airports_location %>%
+  traffic_airports = airports_location %>%
     inner_join(traffic_date, by = c("Code.OACI" = "apt"))
 
   icons <- awesomeIcons(
@@ -64,9 +64,10 @@ map_leaflet_airport <- function(df, airports_location, months, years){
 }
 
 #PLOT AIRPORT LINE----
-plot_airport_line <- function(df, selected_airport){
-  traffic_airports <- df %>% filter(apt %in% selected_airport)
-  figure_plotly <- traffic_airports %>%
+plot_airport_line <- function(selected_airport){
+  df = pax_apt_all %>%
+    filter(apt %in% selected_airport)
+  figure_plotly = df %>%
     plot_ly(
       x = ~date, y = ~apt_pax,
       text = ~apt_nom,

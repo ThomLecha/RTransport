@@ -32,6 +32,7 @@ airports_location = st_read("airports.geojson")
 list_airports = unique(pax_apt_all$apt)
 list_price_flows = setdiff(names(iptap), c("anmois","date","an","mois"))
 list_traffic_flows = list_airports
+
 if (user_app) {
   library(data.table)
   library(tidyverse)
