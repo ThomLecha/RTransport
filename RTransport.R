@@ -189,9 +189,7 @@ ui <- dashboardPage(
 # SERVER ----
 server <- function(input, output, session) {
   output$carte <- renderLeaflet(
-    map_leaflet_airport(
-      month(input$date), year(input$date)
-    )
+    map_leaflet_airport(month(input$date), year(input$date))
   )
   output$plot_apt <- renderPlotly(
     plot_airport_line(input$select_apt)

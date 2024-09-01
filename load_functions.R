@@ -66,12 +66,17 @@ map_leaflet_airport <- function(months, years){
 #PLOT AIRPORT LINE----
 plot_airport_line <- function(selected_airport){
   df = pax_apt_all %>%
-    filter(apt %in% selected_airport)
+    filter(apt %in% selected_airport) %>% 
+    group_by(date) %>%
+    summarise(pax = sum(apt_pax, na.rm = T)) %>%
+    ungroup()
+  
   figure_plotly = df %>%
     plot_ly(
-      x = ~date, y = ~apt_pax,
-      text = ~apt_nom,
-      hovertemplate = paste("<i>Airport:</i> %{text}<br>Traffic: %{y}") ,
+      #x = ~date, y = ~apt_pax,
+      x = ~date, y = ~pax,
+      #text = ~apt_nom,
+      #hovertemplate = paste("<i>Airport:</i> %{text}<br>Traffic: %{y}") ,
       type = 'scatter', mode = 'lines+markers')
   return(figure_plotly)
 }
