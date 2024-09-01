@@ -42,7 +42,7 @@ input_airport <- selectInput(
   "select_apt",
   NULL,#means no label, otherwise just write "months selected" instead of NULL
   choices = list_airports,
-  selected = default_airport
+  selected = "LFPG"
 )
 
 input_price_flows = selectInput(
@@ -50,7 +50,7 @@ input_price_flows = selectInput(
   #NULL,#means no label, otherwise just write "months selected" instead of NULL
   label = "Faisceaux géographiques",
   choices = list_price_flows,
-  selected = default_price_flows,
+  selected = c("met_inter_met","met_intal_tot"),
   multiple = TRUE
 )
 
@@ -59,10 +59,9 @@ input_traffic_flows = selectInput(
   #NULL,#means no label, otherwise just write "months selected" instead of NULL
   label = "Faisceaux géographiques",
   choices = list_traffic_flows,
-  selected = default_traffic_flows,
+  selected = c("paris_international", "radial"),
   multiple = TRUE
 )
-
 
 # User Interface define
 ui <- dashboardPage(
@@ -173,13 +172,13 @@ ui <- dashboardPage(
               textInput(
                 inputId = "airport_lib",
                 label = "Airport",
-                value = default_search_apt
+                value = "orly"
               ),
               DT::dataTableOutput("table_search_apt"),
               textInput(
                 inputId = "company_lib",
                 label = "Company",
-                value = default_search_cie
+                value = "tvf"
               ),
               DT::dataTableOutput("table_search_cie")
               )

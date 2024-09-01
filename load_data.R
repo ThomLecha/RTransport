@@ -5,6 +5,7 @@
 n = stringr::str_locate(getwd(),"Documents")[2]
 datapath = paste0(stringr::str_sub(getwd(),1,n),"/init.R")
 rm(n)
+#user_app = FALSE
 user_app =  file.exists(datapath) # add user item and applications if TRUE, do nothing if FALSE
 
 year_num = 2019:2024 #annees d'observation par ex. c(2019,2022,2023, 2024)
@@ -29,19 +30,15 @@ recent_date = get_recent_date(pax_apt_all,"anmmois")
 date_max=as.character(recent_date)
 airports_location = st_read("airports.geojson")
 list_airports = unique(pax_apt_all$apt)
-default_airport = "LFPG"
 list_price_flows = setdiff(names(iptap), c("anmois","date","an","mois"))
-default_price_flows <- c("met_inter_met","met_intal_tot")
+list_traffic_flows = list_airports
 if (user_app) {
   library(data.table)
   library(tidyverse)
   source(datapath) #run init prog of user
   pax_apt = readRDS(paste0(datadir,"pax_apt.RDS"))
-  list_traffic_flows = unique(pax_apt$faisceau)
-  default_traffic_flows <- c("paris_international", "radial")
-  default_search_apt = "orly"
-  default_search_cie = "tvf"
   # Dataframe required for the app ------------------------
+  list_traffic_flows = unique(pax_apt$faisceau)
   traffic_airports <- pax_apt_all %>%
     mutate(traffic = apt_pax_dep + apt_pax_tr + apt_pax_arr) %>%
     filter(apt %in% default_airport) %>%
