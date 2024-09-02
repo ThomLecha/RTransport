@@ -73,10 +73,7 @@ plot_airport_line <- function(selected_airport){
   
   figure_plotly = df %>%
     plot_ly(
-      #x = ~date, y = ~apt_pax,
       x = ~date, y = ~pax,
-      #text = ~apt_nom,
-      #hovertemplate = paste("<i>Airport:</i> %{text}<br>Traffic: %{y}") ,
       type = 'scatter', mode = 'lines+markers')
   return(figure_plotly)
 }
@@ -118,3 +115,21 @@ plot_traffic_flows = function(selected_traffic_flows){
     )
   return(figure_plotly)
 }
+
+#PLOT TRAFFIC COUNTRY----
+plot_traffic_cou = function(selected_traffic_cou){
+  df = traffic_cou %>% select("date",all_of(selected_traffic_cou))
+  data_long = melt(df, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
+  
+  figure_plotly <- data_long %>%
+    plot_ly(
+      x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%
+    layout(
+      title = paste0('Évolution du trafic'),
+      xaxis = list(title = 'Date'),
+      yaxis = list(title = 'Pax'),
+      legend = list(title = list(text = '<b>Pays</b>'))
+    )
+  return(figure_plotly)
+}
+
