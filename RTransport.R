@@ -24,113 +24,21 @@ if (!exists("pax_apt_all")){ # Avoid loading libraries, functions and data if al
 # UI User Interface ----
 
 # User Interface Inputs
-main_color <- "black"
-input_date_apt <- shinyWidgets::airDatepickerInput(
-  "date_apt",
-  label = "Période d'observation",
-  value = date_max,
-  multiple = TRUE,
-  view = "months",
-  minView = "months",
-  minDate = "2010-01-01",
-  maxDate = date_max,
-  dateFormat = "MMMM yyyy",
-  language = "en"
-)
+main_color = "black"
+input_date_apt = input_date("date_apt", "Période d'observation", date_max) 
+input_date_cie = input_date("date_cie", "Période d'observation", date_max)
+input_date_route_apt = input_date("date_route_apt", "Période d'observation", date_max2)
+input_date_route_cou = input_date("date_route_cou", "Période d'observation", date_max2)
 
-input_date_cie <- shinyWidgets::airDatepickerInput(
-  "date_cie",
-  label = "Période d'observation",
-  value = date_max,
-  multiple = TRUE,
-  view = "months",
-  minView = "months",
-  minDate = "2010-01-01",
-  maxDate = date_max,
-  dateFormat = "MMMM yyyy",
-  language = "en"
-)
-
-input_airport <- selectInput(
-  "select_apt",
-  NULL,#means no label, otherwise just write "months selected" instead of NULL
-  choices = list_airports,
-  selected = "LFPG",
-  multiple = TRUE
-)
-
-input_price_flows = selectInput(
-  "select_price_flows",
-  #NULL,#means no label, otherwise just write "months selected" instead of NULL
-  label = "Faisceaux géographiques",
-  choices = list_price_flows,
-  selected = c("met_inter_met","met_intal_tot"),
-  multiple = TRUE
-)
-
-input_date_route_apt <- shinyWidgets::airDatepickerInput(
-  "date_route_apt",
-  label = "Période d'observation",
-  value = date_max2,
-  multiple = TRUE,
-  view = "months",
-  minView = "months",
-  minDate = "2010-01-01",
-  maxDate = date_max2,
-  dateFormat = "MMMM yyyy",
-  language = "en"
-)
-
-input_airport_start = selectInput(
-  "select_apt_start",
-  NULL,#means no label, otherwise just write "months selected" instead of NULL
-  choices = list_airports,
-  selected = "LFPG",
-  multiple = TRUE
-)
-
-input_airport_end = selectInput(
-  "select_apt_end",
-  NULL,#means no label, otherwise just write "months selected" instead of NULL
-  choices = list_airports_end,
-  selected = "KJFK",
-  multiple = TRUE
-)
-
-input_date_route_cou <- shinyWidgets::airDatepickerInput(
-  "date_route_cou",
-  label = "Période d'observation",
-  value = date_max2,
-  multiple = TRUE,
-  view = "months",
-  minView = "months",
-  minDate = "2010-01-01",
-  maxDate = date_max2,
-  dateFormat = "MMMM yyyy",
-  language = "en"
-)
-
-input_cou = selectInput(
-  "select_cou",
-  NULL,#means no label, otherwise just write "months selected" instead of NULL
-  choices = list_cou,
-  selected = "CHINA",
-  multiple = TRUE
-)
-
-input_traffic_flows = selectInput(
-  "select_traffic_flows",
-  #NULL,#means no label, otherwise just write "months selected" instead of NULL
-  label = "Faisceaux géographiques",
-  choices = list_traffic_flows,
-  selected = c("paris_international", "radial"),
-  multiple = TRUE
-)
+input_airport = selectInput("select_apt",NULL,choices = list_airports,selected = "LFPG",multiple = TRUE)
+input_airport_start = selectInput("select_apt_start",NULL,choices = list_airports,selected = "LFPG",multiple = TRUE)
+input_airport_end = selectInput("select_apt_end",NULL,choices = list_airports_end,selected = "KJFK",multiple = TRUE)
+input_cou = selectInput("select_cou",NULL,choices = list_cou,selected = "CHINA",multiple = TRUE)
+input_price_flows = selectInput("select_price_flows",label = "Faisceaux géographiques",choices = list_price_flows,selected = c("met_inter_met","met_intal_tot"),multiple = TRUE)
+input_traffic_flows = selectInput("select_traffic_flows",label = "Faisceaux géographiques",choices = list_traffic_flows,selected = c("paris_international", "radial"),multiple = TRUE)
 
 # User Interface define
-ui <- dashboardPage(
-  dashboardHeader(title = "R Transport"
-  ),
+ui <- dashboardPage(dashboardHeader(title = "R Transport"),
   
   # SIDEBAR MENU ----
   if (user_app) {
@@ -168,13 +76,8 @@ ui <- dashboardPage(
               inverse = TRUE,
               layout_columns(
                 card(
-                  HTML(
-                    '<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️ refaire ce type de tableau en R ou Python</a>'
-                  ),
-                  HTML(
-                    '<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️ séries accessibles sur data.gouv.fr</a>'
-                  ),
-                  
+                  HTML('<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️ refaire ce type de tableau en R ou Python</a>'),
+                  HTML('<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️ séries accessibles sur data.gouv.fr</a>'),
                   input_date_apt,
                   DT::DTOutput("table_traffic_apt")
                 ),
@@ -182,8 +85,7 @@ ui <- dashboardPage(
                   card(leafletOutput("carte")),
                   card(card_header("Aéroports", class = "bg-dark"),
                        input_airport,
-                       plotlyOutput("plot_apt")
-                  ),
+                       plotlyOutput("plot_apt")),
                   col_widths = c(12,12)
                 ),
                 cols_widths = c(12,12,12)
@@ -193,9 +95,7 @@ ui <- dashboardPage(
       # Company traffic
       tabItem(tabName = "cie",
               h2("Trafic aérien des compagnies, en millions de passagers, source DGAC"),
-              HTML(
-                '<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️ séries accessibles sur data.gouv.fr</a>'
-              ),
+              HTML('<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️ séries accessibles sur data.gouv.fr</a>'),
               input_date_cie,
               DT::DTOutput("table_traffic_cie")
       ),
@@ -203,22 +103,18 @@ ui <- dashboardPage(
       # CO2 emissions
       tabItem(tabName = "co2",
               h2("Emissions de CO2 du trafic aérien, en million de tonnes, source DGAC"),
-              HTML(
-                '<a href="https://www.ecologie.gouv.fr/politiques-publiques/emissions-gazeuses-liees-trafic-aerien">👉️ bilan des émissions gazeuses du transport aérien</a>'
-              )
+              HTML('<a href="https://www.ecologie.gouv.fr/politiques-publiques/emissions-gazeuses-liees-trafic-aerien">👉️ bilan des émissions gazeuses du transport aérien</a>')
       ),
       
       # Price index
       tabItem(tabName = "iptap",
               h2("Indice des prix du transport aérien - IPTAP, source DGAC"),
-              HTML(
-                '<a href="https://www.data.gouv.fr/fr/datasets/indices-des-prix-du-transport-aerien-de-passagers/">👉 séries accessibles sur data.gouv.fr</a>'
-              ),
+              HTML('<a href="https://www.data.gouv.fr/fr/datasets/indices-des-prix-du-transport-aerien-de-passagers/">👉 séries accessibles sur data.gouv.fr</a>'),
               input_price_flows,
               plotlyOutput("plot_price")
       ),
       
-      # Detailed traffic
+      # Traffic flows
       tabItem(tabName = "traffic",
               input_traffic_flows,
               plotlyOutput("plot_traffic"),
@@ -269,41 +165,15 @@ ui <- dashboardPage(
 
 # SERVER ----
 server <- function(input, output, session) {
+  
+  # MAPS & PLOTS ----
   output$carte <- renderLeaflet(map_leaflet_airport(month(input$date_apt), year(input$date_apt)))
   output$plot_apt <- renderPlotly(plot_airport_line(input$select_apt))
-  output$plot_price <- renderPlotly(plot_price_index(input$select_price_flows))
-  output$plot_traffic <- renderPlotly(plot_traffic_flows(input$select_traffic_flows))
-  # REACTIVES & OUTPUTS ----
-  dfsearchapt = reactive({return(apt %>% filter(str_detect(simplify_text(apt$label), input$airport_lib)|str_detect(simplify_text(apt$aptname), input$airport_lib)|str_detect(simplify_text(apt$aptoaci), input$airport_lib)|str_detect(simplify_text(apt$aptiata), input$airport_lib)|str_detect(simplify_text(apt$apays), input$airport_lib)|str_detect(simplify_text(apt$countrynameoaci), input$airport_lib)))})
-  output$table_search_apt <- DT::renderDataTable({DT::datatable(dfsearchapt())})
+  output$plot_cou <- renderPlotly(plot_evol(traffic_cou,input$select_cou,"Évolution du trafic","pax","Pays"))
+  output$plot_price = renderPlotly(plot_evol(iptap,input$select_price_flows, "Évolution des prix par faisceau géographique", "IPTAP", "Faisceaux"))
+  output$plot_traffic = renderPlotly(plot_evol(traffic_flows, input$select_traffic_flows, "Évolution du trafic par faisceau géographique","Mpax","Faisceaux"))
 
-  dfsearchcie = reactive({return(cie %>% filter(str_detect(simplify_text(cie$ciecodeoaci), input$company_lib)|str_detect(simplify_text(cie$cieiata), input$company_lib)|str_detect(simplify_text(cie$cielabel), input$company_lib)|str_detect(simplify_text(cie$ciepayinfo), input$company_lib)))})
-  output$table_search_cie <- DT::renderDataTable({DT::datatable(dfsearchcie())})
-
-  dftrafficapt = reactive({
-    pax_apt_all %>% 
-      filter(mois %in% month(input$date_apt), an %in% year(input$date_apt)) %>% 
-      group_by(apt, apt_nom) %>%
-      summarise(
-        pax = round(sum(apt_pax, na.rm = T)/1000000,3),
-        depart = round(sum(apt_pax_dep, na.rm = T)/1000000,3),
-        arriv = round(sum(apt_pax_arr, na.rm = T)/1000000,3),
-        transit = round(sum(apt_pax_tr, na.rm = T)/1000000,3)) %>%
-      arrange(desc(pax)) %>%
-      ungroup()
-  })
-  output$table_traffic_apt <- DT::renderDataTable({DT::datatable(dftrafficapt())})
-  
-  dftrafficcie = reactive({
-    pax_cie_all %>% 
-      filter(mois %in% month(input$date_cie), an %in% year(input$date_cie)) %>% 
-      group_by(cie, cie_nom) %>%
-      summarise(pax = round(sum(cie_pax, na.rm = T)/1000000,3)) %>%
-      arrange(desc(pax)) %>%
-      ungroup()
-  })
-  output$table_traffic_cie <- DT::renderDataTable({DT::datatable(dftrafficcie())})
-  
+  # REACTIVES ----
   dfrouteapt = reactive({
     df = pax_apt %>%
       filter(fluxindic==1) %>% 
@@ -315,11 +185,7 @@ server <- function(input, output, session) {
       group_by(cielabel,ciepayinfo) %>%
       summarise(mvt = sum(mvt, na.rm=T), pax = round(sum(pax, na.rm = T)), sieges = sum(sieges, na.rm = T)) %>%
       arrange(desc(pax)) %>%
-      ungroup()
-  })
-  output$table_route_apt <- DT::renderDataTable({DT::datatable(dfrouteapt())})
-  
-  output$plot_cou <- renderPlotly(plot_traffic_cou(input$select_cou))
+      ungroup()})
   dfroutecou = reactive({
     df = pax_apt %>%
       filter(fluxindic==1) %>% 
@@ -331,11 +197,36 @@ server <- function(input, output, session) {
       group_by(cielabel,ciepayinfo) %>%
       summarise(mvt = sum(mvt, na.rm=T), pax = round(sum(pax, na.rm = T)), sieges = sum(sieges, na.rm = T)) %>%
       arrange(desc(pax)) %>%
-      ungroup()
-  })
-  output$table_route_cou <- DT::renderDataTable({DT::datatable(dfroutecou())})
-  
+      ungroup()})
+  dfsearchapt = reactive({return(apt %>% filter(str_detect(simplify_text(apt$label), input$airport_lib)|str_detect(simplify_text(apt$aptname), input$airport_lib)|str_detect(simplify_text(apt$aptoaci), input$airport_lib)|str_detect(simplify_text(apt$aptiata), input$airport_lib)|str_detect(simplify_text(apt$apays), input$airport_lib)|str_detect(simplify_text(apt$countrynameoaci), input$airport_lib)))})
+  dfsearchcie = reactive({return(cie %>% filter(str_detect(simplify_text(cie$ciecodeoaci), input$company_lib)|str_detect(simplify_text(cie$cieiata), input$company_lib)|str_detect(simplify_text(cie$cielabel), input$company_lib)|str_detect(simplify_text(cie$ciepayinfo), input$company_lib)))})
   dftraffic = reactive({return(pax_apt %>% filter((mois %in% input$mon)&(an == input$yea)))})
+  dftrafficapt = reactive({
+    pax_apt_all %>% 
+      filter(mois %in% month(input$date_apt), an %in% year(input$date_apt)) %>% 
+      group_by(apt, apt_nom) %>%
+      summarise(
+        pax = round(sum(apt_pax, na.rm = T)/1000000,3),
+        depart = round(sum(apt_pax_dep, na.rm = T)/1000000,3),
+        arriv = round(sum(apt_pax_arr, na.rm = T)/1000000,3),
+        transit = round(sum(apt_pax_tr, na.rm = T)/1000000,3)) %>%
+      arrange(desc(pax)) %>%
+      ungroup()})
+  dftrafficcie = reactive({
+    pax_cie_all %>% 
+      filter(mois %in% month(input$date_cie), an %in% year(input$date_cie)) %>% 
+      group_by(cie, cie_nom) %>%
+      summarise(pax = round(sum(cie_pax, na.rm = T)/1000000,3)) %>%
+      arrange(desc(pax)) %>%
+      ungroup()})
+
+  # RENDER TABLES ----
+  output$table_search_apt <- DT::renderDataTable({DT::datatable(dfsearchapt())})
+  output$table_search_cie <- DT::renderDataTable({DT::datatable(dfsearchcie())})
+  output$table_traffic_apt <- DT::renderDataTable({DT::datatable(dftrafficapt())})
+  output$table_traffic_cie <- DT::renderDataTable({DT::datatable(dftrafficcie())})
+  output$table_route_apt <- DT::renderDataTable({DT::datatable(dfrouteapt())})
+  output$table_route_cou <- DT::renderDataTable({DT::datatable(dfroutecou())})
   output$table_traffic <- DT::renderDataTable(DT::datatable({
     data = bind_rows(
       dftraffic() %>%

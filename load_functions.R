@@ -2,20 +2,29 @@
 ###         R TRANSPORT        ###
 ##################################
 
-#INIT DATA----
+# INPUT DATE SELECTION----
+input_date <- function(input_id, label, maxDate) {
+  shinyWidgets::airDatepickerInput(
+    inputId = input_id,
+    label = label,
+    value = maxDate,
+    multiple = TRUE,
+    view = "months",
+    minView = "months",
+    minDate = "2010-01-01",
+    maxDate = maxDate,
+    dateFormat = "MMMM yyyy",
+    language = "en"
+  )
+}
+
+# CLEAN DATA----
 clean_dataframe <- function(df){
   names(df) <- tolower(names(df))  #lower case for variable names
   df <- df %>% 
-    mutate(
-      anmois = as.character(anmois)
-      ) %>% 
-    mutate(
-      an = str_sub(anmois,1,4),
-      mois = str_sub(anmois,5,6)
-    ) %>%
-    mutate(
-      mois = str_remove(mois, "^0+")
-    )
+    mutate(anmois = as.character(anmois)) %>% 
+    mutate(an = str_sub(anmois,1,4),mois = str_sub(anmois,5,6)) %>%
+    mutate(mois = str_remove(mois, "^0+"))
   return(df)
 }
 
@@ -25,13 +34,11 @@ get_recent_date <- function(df, anmois) { # Find most recent date
   return(recent_date)
 }
 
-#MAP LEAFLET AIRPORT----
+# MAP LEAFLET AIRPORT----
 map_leaflet_airport <- function(months, years){
   palette <- c("green", "orange", "darkred")
   traffic_date <- pax_apt_all %>%
-    mutate(
-      date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d")
-    ) %>%
+    mutate(date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d")) %>%
     filter(mois %in% months, an %in% years) %>% 
     mutate(traffic = apt_pax_dep+apt_pax_arr+apt_pax_tr) %>% 
     group_by(apt) %>%
@@ -40,8 +47,7 @@ map_leaflet_airport <- function(months, years){
     mutate(volume = case_when(
       (traffic > 1)~3,
       (traffic >= 0.1)~2,
-      (traffic < 0.1)~1
-      )
+      (traffic < 0.1)~1)
     ) %>% 
     mutate(color = palette[volume])
   
@@ -54,7 +60,6 @@ map_leaflet_airport <- function(months, years){
     library = 'fa',
     markerColor = traffic_airports$color
   )
-  
   carte_interactive <- leaflet(traffic_airports) %>% addTiles() %>%
     addAwesomeMarkers(
       icon=icons[],
@@ -63,73 +68,29 @@ map_leaflet_airport <- function(months, years){
   return(carte_interactive)
 }
 
-#PLOT AIRPORT LINE----
+#PLOT ----
 plot_airport_line <- function(selected_airport){
   df = pax_apt_all %>%
     filter(apt %in% selected_airport) %>% 
     group_by(date) %>%
     summarise(pax = sum(apt_pax, na.rm = T)) %>%
     ungroup()
-  
   figure_plotly = df %>%
     plot_ly(
       x = ~date, y = ~pax,
       type = 'scatter', mode = 'lines+markers')
   return(figure_plotly)
 }
-
-# ADDITIONNAL FUNCTIONS ----
-
-#PLOT PRICE INDEX ----
-plot_price_index = function(selected_price_flows){
-  df = iptap %>% select("date",all_of(selected_price_flows))
+plot_evol = function(df, selected, title_plot, title_y, legend_y){
+  df = df %>% select("date",all_of(selected))
   data_long = melt(df, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
-  
   figure_plotly <- data_long %>%
-    plot_ly(
-      x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%
+    plot_ly(x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%
     layout(
-      title = 'Évolution des prix par faisceau géographique',
+      title = title_plot,
       xaxis = list(title = 'Date'),
-      yaxis = list(title = 'IPTAP'),
-      legend = list(title = list(text = '<b>Faisceaux</b>'))
+      yaxis = list(title = title_y),
+      legend = list(title = list(text = legend_y))
     )
   return(figure_plotly)
 }
-
-#selected_traffic_flows = default_traffic_flows
-#df = pax_apt
-  #PLOT TRAFFIC FLOWS----
-plot_traffic_flows = function(selected_traffic_flows){
-  df = traffic_flows %>% select("date",all_of(selected_traffic_flows))
-  data_long = melt(df, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
-    
-  figure_plotly <- data_long %>%
-    plot_ly(
-      x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%
-    layout(
-      title = 'Évolution du trafic par faisceau géographique',
-      xaxis = list(title = 'Date'),
-      yaxis = list(title = 'Mpax'),
-      legend = list(title = list(text = '<b>Faisceaux</b>'))
-    )
-  return(figure_plotly)
-}
-
-#PLOT TRAFFIC COUNTRY----
-plot_traffic_cou = function(selected_traffic_cou){
-  df = traffic_cou %>% select("date",all_of(selected_traffic_cou))
-  data_long = melt(df, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
-  
-  figure_plotly <- data_long %>%
-    plot_ly(
-      x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%
-    layout(
-      title = paste0('Évolution du trafic'),
-      xaxis = list(title = 'Date'),
-      yaxis = list(title = 'Pax'),
-      legend = list(title = list(text = '<b>Pays</b>'))
-    )
-  return(figure_plotly)
-}
-
