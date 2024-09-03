@@ -22,13 +22,14 @@ iptap = clean_dataframe(read.csv(datapath_iptap, header=TRUE,sep=";",dec=",")) %
 pax_apt_all = clean_dataframe(read_parquet(datapath_apt)) %>% 
   mutate(apt_pax = apt_pax_dep + apt_pax_tr + apt_pax_arr) %>% 
   mutate(date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d"))
-pax_cie_all = clean_dataframe(read_parquet(datapath_cie))
+pax_cie_all = clean_dataframe(read_parquet(datapath_cie)) %>% mutate(date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d"))
 #pax_lsn_all = clean_dataframe(read_parquet(datapath_lsn))
 
 recent_date = get_recent_date(pax_apt_all,"anmmois")
 airports_location = st_read("airports.geojson")
 date_max=as.character(recent_date)
 list_airports = sort(unique(pax_apt_all$apt))
+list_cie = sort(unique(pax_cie_all$cie_nom))
 list_price_flows = setdiff(names(iptap), c("anmois","date","an","mois"))
 
 date_max2=NULL
@@ -45,8 +46,8 @@ if (user_app) {
   recent_date2 = get_recent_date(pax_apt,"anmmois")
   date_max2=as.character(recent_date2)
   list_airports_end = sort(unique(apt$aptoaci))
-  list_traffic_flows = sort(unique(pax_apt$faisceau))
   list_cou = sort(unique(pax_apt$countrynameoaciapt2))
+  list_traffic_flows = sort(unique(pax_apt$faisceau))
   
   traffic_cou = pax_apt %>%
     mutate(date = paste0(an,mois)) %>%
@@ -57,6 +58,17 @@ if (user_app) {
     ungroup() %>% 
     tidyr::pivot_wider(names_from=countrynameoaciapt2,values_from=pax,names_prefix="")
 
+  traffic_route = pax_apt %>%
+    mutate(date = paste0(an,mois)) %>%
+    mutate (date = as.Date(paste0(date, "01"), format = "%Y%m%d")) %>%
+    filter(fluxindic == 1) %>% 
+    group_by(date, apt1, apt2) %>%
+    summarise(pax = round(sum(pax, na.rm = T))) %>% 
+    ungroup() %>% 
+    mutate(apt1apt2=paste0(apt1,apt2)) %>% 
+    select(date,apt1apt2,pax) %>% 
+    tidyr::pivot_wider(names_from=apt1apt2, values_from=pax,names_prefix="")
+  
   traffic_flows = pax_apt %>%
     mutate(date = paste0(an,mois)) %>%
     mutate (date = as.Date(paste0(date, "01"), format = "%Y%m%d")) %>%

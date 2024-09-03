@@ -69,18 +69,19 @@ map_leaflet_airport <- function(months, years){
 }
 
 #PLOT ----
-plot_airport_line <- function(selected_airport){
-  df = pax_apt_all %>%
-    filter(apt %in% selected_airport) %>% 
-    group_by(date) %>%
-    summarise(pax = sum(apt_pax, na.rm = T)) %>%
+plot_traffic_selection = function(df, selected_list){
+  df = df %>%
+    filter(selected_var %in% selected_list) %>% 
+    group_by(selected_var,date) %>%
+    summarise(pax = sum(pax, na.rm = T)) %>%
     ungroup()
   figure_plotly = df %>%
     plot_ly(
       x = ~date, y = ~pax,
-      type = 'scatter', mode = 'lines+markers')
+      type = 'scatter', mode = 'lines+markers', color = ~selected_var)
   return(figure_plotly)
 }
+
 plot_evol = function(df, selected, title_plot, title_y, legend_y){
   df = df %>% select("date",all_of(selected))
   data_long = melt(df, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé

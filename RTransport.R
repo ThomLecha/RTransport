@@ -33,6 +33,7 @@ input_date_route_cou = input_date("date_route_cou", "Période d'observation", da
 input_airport = selectInput("select_apt",NULL,choices = list_airports,selected = "LFPG",multiple = TRUE)
 input_airport_start = selectInput("select_apt_start",NULL,choices = list_airports,selected = "LFPG",multiple = TRUE)
 input_airport_end = selectInput("select_apt_end",NULL,choices = list_airports_end,selected = "KJFK",multiple = TRUE)
+input_cie = selectInput("select_cie",NULL,choices = list_cie,selected = c("RYANAIR","TRANSAVIA FRANCE"),multiple = TRUE)
 input_cou = selectInput("select_cou",NULL,choices = list_cou,selected = "CHINA",multiple = TRUE)
 input_price_flows = selectInput("select_price_flows",label = "Faisceaux géographiques",choices = list_price_flows,selected = c("met_inter_met","met_intal_tot"),multiple = TRUE)
 input_traffic_flows = selectInput("select_traffic_flows",label = "Faisceaux géographiques",choices = list_traffic_flows,selected = c("paris_international", "radial"),multiple = TRUE)
@@ -96,6 +97,8 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
       tabItem(tabName = "cie",
               h2("Trafic aérien des compagnies, en millions de passagers, source DGAC"),
               HTML('<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️ séries accessibles sur data.gouv.fr</a>'),
+              input_cie,
+              plotlyOutput("plot_cie"),
               input_date_cie,
               DT::DTOutput("table_traffic_cie")
       ),
@@ -130,9 +133,10 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
       
       # Route selection and traffic between 2 airports
       tabItem(tabName = "route_apt",
-              input_date_route_apt,
               input_airport_start,
               input_airport_end,
+              plotlyOutput("plot_route"),
+              input_date_route_apt,
               DT::dataTableOutput("table_route_apt")
       ),
 
@@ -168,9 +172,11 @@ server <- function(input, output, session) {
   
   # MAPS & PLOTS ----
   output$carte <- renderLeaflet(map_leaflet_airport(month(input$date_apt), year(input$date_apt)))
-  output$plot_apt <- renderPlotly(plot_airport_line(input$select_apt))
+  output$plot_apt <- renderPlotly(plot_traffic_selection(pax_apt_all %>% mutate(selected_var=apt,pax = apt_pax),input$select_apt))
+  output$plot_cie <- renderPlotly(plot_traffic_selection(pax_cie_all %>% mutate(selected_var=cie_nom,pax = cie_pax),input$select_cie))
   output$plot_cou <- renderPlotly(plot_evol(traffic_cou,input$select_cou,"Évolution du trafic","pax","Pays"))
   output$plot_price = renderPlotly(plot_evol(iptap,input$select_price_flows, "Évolution des prix par faisceau géographique", "IPTAP", "Faisceaux"))
+  output$plot_route = renderPlotly(plot_evol(traffic_route,paste0(input$select_apt_start,input$select_apt_end),"Évolution du trafic","pax","Liaison"))
   output$plot_traffic = renderPlotly(plot_evol(traffic_flows, input$select_traffic_flows, "Évolution du trafic par faisceau géographique","Mpax","Faisceaux"))
 
   # REACTIVES ----
