@@ -17,15 +17,15 @@ datapath_cie = "https://www.data.gouv.fr/fr/datasets/r/314cfa80-fe1f-4834-b18e-9
 #datapath_lsn = "https://www.data.gouv.fr/fr/datasets/r/a3947c3b-36ae-4aa0-bee2-323f6d684f0e"
 datapath_iptap = "https://www.data.gouv.fr/fr/datasets/r/ca158a15-0f41-4528-b370-282ce04e22d4"
 
-iptap = clean_dataframe(read.csv(datapath_iptap, header=TRUE,sep=";",dec=",")) %>% 
-  mutate(date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d"))
+iptap = clean_dataframe(read.csv(datapath_iptap, header=TRUE,sep=";",dec=",")) %>% mutate(date = as.Date(paste(anmois, "15", sep=""), format = "%Y%m%d"))
 pax_apt_all = clean_dataframe(read_parquet(datapath_apt)) %>% 
   mutate(apt_pax = apt_pax_dep + apt_pax_tr + apt_pax_arr) %>% 
-  mutate(date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d"))
-pax_cie_all = clean_dataframe(read_parquet(datapath_cie)) %>% mutate(date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d"))
-#pax_lsn_all = clean_dataframe(read_parquet(datapath_lsn))
+  mutate(date = as.Date(paste(anmois, "15", sep=""), format = "%Y%m%d"))
+pax_cie_all = clean_dataframe(read_parquet(datapath_cie)) %>% mutate(date = as.Date(paste(anmois, "15", sep=""), format = "%Y%m%d"))
+#pax_lsn_all = clean_dataframe(read_parquet(datapath_lsn)) %>% mutate(date = as.Date(paste(anmois, "15", sep=""), format = "%Y%m%d"))
 
-recent_date = get_recent_date(pax_apt_all,"anmmois")
+recent_date = max(pax_apt_all$date)
+
 airports_location = st_read("airports.geojson")
 date_max=as.character(recent_date)
 list_airports = sort(unique(pax_apt_all$apt))
@@ -41,37 +41,34 @@ list_traffic_flows = NULL
 if (user_app) {
   library(data.table)
   source(datapath) #run init prog of user
-  pax_apt = readRDS(paste0(datadir,"pax_apt.RDS")) %>% 
-    mutate(anmois=paste0(an,mois))
+  pax_apt = readRDS(paste0(datadir,"pax_apt.RDS"))
+  #pax_apt = readRDS(paste0(datadir,"pax_apt.RDS")) %>% mutate(anmois=paste0(an,mois))
   # Dataframe required for the app ------------------------
-  recent_date2 = get_recent_date(pax_apt,"anmmois")
+  recent_date2 = max(pax_apt$date)
   date_max2=as.character(recent_date2)
   list_airports_end = sort(unique(apt$aptoaci))
   list_cou = sort(unique(pax_apt$countrynameoaciapt2))
   list_ihh_flows=sort(unique(pax_apt$e3fscapt2))
   list_traffic_flows = sort(unique(pax_apt$e3fscapt2))
 
-  unique(pax_apt$e3fscapt2)
-    
   traffic_ihh = pax_apt %>% 
     filter(fluxindic==1) %>%
-    mutate(jointure=paste0(anmois, e3fscapt2)) %>% 
-    group_by(cielabel, anmois, e3fscapt2, jointure) %>%
+    group_by(cielabel, e3fscapt2, date) %>%
     summarise(pax = sum(pax, na.rm = T)) %>% 
     ungroup
   tmp = traffic_ihh %>%
-    group_by(anmois, e3fscapt2, jointure) %>%
+    group_by(e3fscapt2, date) %>%
     summarise(paxtot = sum(pax, na.rm = T)) %>%
     ungroup %>% 
-    select(jointure, paxtot)
+    select(e3fscapt2, date, paxtot)
   traffic_ihh = traffic_ihh %>% 
-    left_join(tmp, by=(c(("jointure" = "jointure")))) %>% 
+    inner_join(tmp, by=c("e3fscapt2", "date")) %>% 
     mutate(share2 = (pax/paxtot)^2) %>%
-    mutate(date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d")) %>% 
     group_by(e3fscapt2, date) %>%
     summarise(ihh = round(sum(share2, na.rm = T),3)) %>%
     ungroup %>%
-    tidyr::pivot_wider(names_from=e3fscapt2,values_from=ihh,names_prefix="")
+    tidyr::pivot_wider(names_from=e3fscapt2,values_from=ihh,names_prefix="") %>% 
+    select(-"NA")
   rm(tmp)
   
   traffic_cou = pax_apt %>%
