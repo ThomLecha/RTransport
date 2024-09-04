@@ -46,10 +46,49 @@ if (user_app) {
   # Dataframe required for the app ------------------------
   recent_date2 = max(pax_apt$date)
   date_max2=as.character(recent_date2)
+  list_anmois = unique((paste0(pax_apt$an,pax_apt$mois)))
   list_airports_end = sort(unique(apt$aptoaci))
   list_cou = sort(unique(pax_apt$countrynameoaciapt2))
   list_ihh_flows=sort(unique(pax_apt$e3fscapt2))
   list_traffic_flows = sort(unique(pax_apt$e3fscapt2))
+  
+  #a="2019"
+  #m="06"
+  #airp = "LFOB"
+  tmp = NULL
+  for (airp in intersect(apt_fra,list_airports)) { 
+    for (anmois in list_anmois) {
+      a = substr(anmois,1,4)
+      m = substr(anmois,5,6)
+      df = pax_apt %>% 
+        filter (an==a & mois==m) %>% 
+        filter(apt1==airp | apt2==airp) %>% 
+        mutate(route = case_when(
+          apt1==airp ~ paste0(apt1,apt2),
+          apt2==airp ~ paste0(apt2,apt1)
+        )) %>% 
+        filter(pax>159)#correspond à au moins 1 vol A/R par semaine d'au moins 20 passagers, soit au moins 160 passagers par mois
+      dest = length(unique(df$route))
+      
+      #df = pax_apt %>% 
+      #filter (an==a & mois==m) %>% 
+      #filter(formulaire==airp) %>% 
+      #filter(pax>159) %>%
+      #summarise(sieges = sum(sieges, na.rm = T), pax = round(sum(pax, na.rm = T)), mvt = sum(mvt, na.rm = T))
+      #x = c(a, m,airp,dest,df$sieges, df$pax, df$mvt)
+      x = c(a, m,airp,dest)
+      tmp = rbind(x,tmp)
+    }
+  }
+  tmp = as.data.frame(tmp)
+  row.names(tmp)=NULL
+  names(tmp)=c("an","mois","apt","dest")
+  #names(tmp)=c("an","mois","apt","dest","sieges","pax","mvt")
+  traffic_connect = tmp %>%
+    mutate(dest=as.integer(dest)) %>% 
+    mutate(date = as.Date(paste(an,mois, "15", sep=""), format = "%Y%m%d")) %>% 
+    tidyr::pivot_wider(names_from=apt,values_from=dest,names_prefix="")
+  rm(df,tmp)
 
   traffic_ihh = pax_apt %>% 
     filter(fluxindic==1) %>%
@@ -73,7 +112,7 @@ if (user_app) {
   
   traffic_cou = pax_apt %>%
     filter(fluxindic == 1) %>% 
-    mutate (date = as.Date(paste0(anmois, "01"), format = "%Y%m%d")) %>%
+    #mutate (date = as.Date(paste0(anmois, "01"), format = "%Y%m%d")) %>%
     group_by(date, countrynameoaciapt2) %>%
     summarise(pax = round(sum(pax, na.rm = T))) %>% 
     ungroup() %>% 
@@ -81,7 +120,7 @@ if (user_app) {
 
   traffic_route = pax_apt %>%
     filter(fluxindic == 1) %>% 
-    mutate (date = as.Date(paste0(anmois, "01"), format = "%Y%m%d")) %>%
+    #mutate (date = as.Date(paste0(anmois, "01"), format = "%Y%m%d")) %>%
     group_by(date, apt1, apt2) %>%
     summarise(pax = round(sum(pax, na.rm = T))) %>% 
     ungroup() %>% 
@@ -91,7 +130,7 @@ if (user_app) {
   
   traffic_flows = pax_apt %>%
     filter(fluxindic == 1) %>% 
-    mutate (date = as.Date(paste0(anmois, "01"), format = "%Y%m%d")) %>%
+    #mutate (date = as.Date(paste0(anmois, "01"), format = "%Y%m%d")) %>%
     #group_by(date, faisceau) %>%
     group_by(date, e3fscapt2) %>%
     summarise(pax = round(sum(pax, na.rm = T)/1000000,3)) %>% 
