@@ -35,6 +35,7 @@ list_price_flows = setdiff(names(iptap), c("anmois","date","an","mois"))
 date_max2=NULL
 list_airports_end = NULL
 list_cou = NULL
+list_ihh_flows=NULL
 list_traffic_flows = NULL
 
 if (user_app) {
@@ -47,21 +48,43 @@ if (user_app) {
   date_max2=as.character(recent_date2)
   list_airports_end = sort(unique(apt$aptoaci))
   list_cou = sort(unique(pax_apt$countrynameoaciapt2))
-  list_traffic_flows = sort(unique(pax_apt$faisceau))
+  list_ihh_flows=sort(unique(pax_apt$e3fscapt2))
+  list_traffic_flows = sort(unique(pax_apt$e3fscapt2))
+
+  unique(pax_apt$e3fscapt2)
+    
+  traffic_ihh = pax_apt %>% 
+    filter(fluxindic==1) %>%
+    mutate(jointure=paste0(anmois, e3fscapt2)) %>% 
+    group_by(cielabel, anmois, e3fscapt2, jointure) %>%
+    summarise(pax = sum(pax, na.rm = T)) %>% 
+    ungroup
+  tmp = traffic_ihh %>%
+    group_by(anmois, e3fscapt2, jointure) %>%
+    summarise(paxtot = sum(pax, na.rm = T)) %>%
+    ungroup %>% 
+    select(jointure, paxtot)
+  traffic_ihh = traffic_ihh %>% 
+    left_join(tmp, by=(c(("jointure" = "jointure")))) %>% 
+    mutate(share2 = (pax/paxtot)^2) %>%
+    mutate(date = as.Date(paste(anmois, "01", sep=""), format = "%Y%m%d")) %>% 
+    group_by(e3fscapt2, date) %>%
+    summarise(ihh = round(sum(share2, na.rm = T),3)) %>%
+    ungroup %>%
+    tidyr::pivot_wider(names_from=e3fscapt2,values_from=ihh,names_prefix="")
+  rm(tmp)
   
   traffic_cou = pax_apt %>%
-    mutate(date = paste0(an,mois)) %>%
-    mutate (date = as.Date(paste0(date, "01"), format = "%Y%m%d")) %>%
     filter(fluxindic == 1) %>% 
+    mutate (date = as.Date(paste0(anmois, "01"), format = "%Y%m%d")) %>%
     group_by(date, countrynameoaciapt2) %>%
     summarise(pax = round(sum(pax, na.rm = T))) %>% 
     ungroup() %>% 
     tidyr::pivot_wider(names_from=countrynameoaciapt2,values_from=pax,names_prefix="")
 
   traffic_route = pax_apt %>%
-    mutate(date = paste0(an,mois)) %>%
-    mutate (date = as.Date(paste0(date, "01"), format = "%Y%m%d")) %>%
     filter(fluxindic == 1) %>% 
+    mutate (date = as.Date(paste0(anmois, "01"), format = "%Y%m%d")) %>%
     group_by(date, apt1, apt2) %>%
     summarise(pax = round(sum(pax, na.rm = T))) %>% 
     ungroup() %>% 
@@ -70,11 +93,12 @@ if (user_app) {
     tidyr::pivot_wider(names_from=apt1apt2, values_from=pax,names_prefix="")
   
   traffic_flows = pax_apt %>%
-    mutate(date = paste0(an,mois)) %>%
-    mutate (date = as.Date(paste0(date, "01"), format = "%Y%m%d")) %>%
     filter(fluxindic == 1) %>% 
-    group_by(date, faisceau) %>%
+    mutate (date = as.Date(paste0(anmois, "01"), format = "%Y%m%d")) %>%
+    #group_by(date, faisceau) %>%
+    group_by(date, e3fscapt2) %>%
     summarise(pax = round(sum(pax, na.rm = T)/1000000,3)) %>% 
     ungroup() %>% 
-    tidyr::pivot_wider(names_from=faisceau,values_from=pax,names_prefix="")
+    #tidyr::pivot_wider(names_from=faisceau,values_from=pax,names_prefix="")
+    tidyr::pivot_wider(names_from=e3fscapt2,values_from=pax,names_prefix="")
 }

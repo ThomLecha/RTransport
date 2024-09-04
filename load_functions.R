@@ -73,11 +73,11 @@ plot_traffic_selection = function(df, selected_list){
   df = df %>%
     filter(selected_var %in% selected_list) %>% 
     group_by(selected_var,date) %>%
-    summarise(pax = sum(pax, na.rm = T)) %>%
+    summarise(Mpax = round(sum(pax, na.rm = T)/1000000,3)) %>%
     ungroup()
   figure_plotly = df %>%
     plot_ly(
-      x = ~date, y = ~pax,
+      x = ~date, y = ~Mpax,
       type = 'scatter', mode = 'lines+markers', color = ~selected_var)
   return(figure_plotly)
 }

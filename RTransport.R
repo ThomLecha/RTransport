@@ -35,8 +35,9 @@ input_airport_start = selectInput("select_apt_start",NULL,choices = list_airport
 input_airport_end = selectInput("select_apt_end",NULL,choices = list_airports_end,selected = "KJFK",multiple = TRUE)
 input_cie = selectInput("select_cie",NULL,choices = list_cie,selected = c("RYANAIR","TRANSAVIA FRANCE"),multiple = TRUE)
 input_cou = selectInput("select_cou",NULL,choices = list_cou,selected = "CHINA",multiple = TRUE)
+input_ihh_flows = selectInput("select_ihh_flows",label = "Faisceaux géographiques",choices = list_ihh_flows,selected = c("Amérique du Nord", "Métro"),multiple = TRUE)
 input_price_flows = selectInput("select_price_flows",label = "Faisceaux géographiques",choices = list_price_flows,selected = c("met_inter_met","met_intal_tot"),multiple = TRUE)
-input_traffic_flows = selectInput("select_traffic_flows",label = "Faisceaux géographiques",choices = list_traffic_flows,selected = c("paris_international", "radial"),multiple = TRUE)
+input_traffic_flows = selectInput("select_traffic_flows",label = "Faisceaux géographiques",choices = list_traffic_flows,selected = c("Amérique du Nord", "Métro"),multiple = TRUE)
 
 # User Interface define
 ui <- dashboardPage(dashboardHeader(title = "R Transport"),
@@ -48,8 +49,9 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
         menuItem("Trafic des aéroports français", tabName = "apt", icon = icon("passport")),
         menuItem("Trafic des compagnies", tabName = "cie", icon = icon("plane")),
         menuItem("Emissions de CO2", tabName = "co2", icon = icon("temperature-high")),
-        menuItem("Indice des prix du transport aérien", tabName = "iptap", icon = icon("euro-sign")),
-        menuItem("Trafic par faisceau", tabName = "traffic", icon = icon("key")),
+        menuItem("Prix", tabName = "iptap", icon = icon("euro-sign")),
+        menuItem("Concentration", tabName = "ihh", icon = icon("key")),
+        menuItem("Trafic", tabName = "traffic", icon = icon("key")),
         menuItem("Trafic entre 2 aéroports", tabName = "route_apt", icon = icon("key")),
         menuItem("Trafic avec un pays", tabName = "route_cou", icon = icon("key")),
         menuItem("Recherche apt ou cie", tabName = "search", icon = icon("key"))
@@ -58,11 +60,11 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
   } else {
     dashboardSidebar(
       sidebarMenu(
-        menuItem("Airport traffic", tabName = "apt", icon = icon("passport")),
-        menuItem("Company traffic", tabName = "cie", icon = icon("plane")),
-        menuItem("CO2 emissions", tabName = "co2", icon = icon("temperature-high")),
-        menuItem("Price index", tabName = "iptap", icon = icon("euro-sign"))
-        )
+        menuItem("Trafic des aéroports français", tabName = "apt", icon = icon("passport")),
+        menuItem("Trafic des compagnies", tabName = "cie", icon = icon("plane")),
+        menuItem("Emissions de CO2", tabName = "co2", icon = icon("temperature-high")),
+        menuItem("Prix", tabName = "iptap", icon = icon("euro-sign"))
+      )
     )
   }
   ,
@@ -115,6 +117,14 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
               HTML('<a href="https://www.data.gouv.fr/fr/datasets/indices-des-prix-du-transport-aerien-de-passagers/">👉 séries accessibles sur data.gouv.fr</a>'),
               input_price_flows,
               plotlyOutput("plot_price")
+      ),
+      
+      # Concentration index
+      tabItem(tabName = "ihh",
+              h2("Indice de Herfindahl-Hirschman - IHH, source DGAC"),
+              HTML('<a href="https://www.ecologie.gouv.fr/politiques-publiques/observatoire-concurrence">👉 observatoire de la concurrence</a>'),
+              input_ihh_flows,
+              plotlyOutput("plot_ihh")
       ),
       
       # Traffic flows
@@ -171,12 +181,13 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
 server <- function(input, output, session) {
   
   # MAPS & PLOTS ----
-  output$carte <- renderLeaflet(map_leaflet_airport(month(input$date_apt), year(input$date_apt)))
-  output$plot_apt <- renderPlotly(plot_traffic_selection(pax_apt_all %>% mutate(selected_var=apt,pax = apt_pax),input$select_apt))
-  output$plot_cie <- renderPlotly(plot_traffic_selection(pax_cie_all %>% mutate(selected_var=cie_nom,pax = cie_pax),input$select_cie))
-  output$plot_cou <- renderPlotly(plot_evol(traffic_cou,input$select_cou,"Évolution du trafic","pax","Pays"))
+  output$carte = renderLeaflet(map_leaflet_airport(month(input$date_apt), year(input$date_apt)))
+  output$plot_apt = renderPlotly(plot_traffic_selection(pax_apt_all %>% mutate(selected_var=apt,pax = apt_pax),input$select_apt))
+  output$plot_cie = renderPlotly(plot_traffic_selection(pax_cie_all %>% mutate(selected_var=cie_nom,pax = cie_pax),input$select_cie))
+  output$plot_cou = renderPlotly(plot_evol(traffic_cou,input$select_cou,"Évolution du trafic","pax","Pays"))
+  output$plot_ihh = renderPlotly(plot_evol(traffic_ihh,input$select_ihh_flows,"Évolution de la concentration","IHH","Faisceaux"))
   output$plot_price = renderPlotly(plot_evol(iptap,input$select_price_flows, "Évolution des prix par faisceau géographique", "IPTAP", "Faisceaux"))
-  output$plot_route = renderPlotly(plot_evol(traffic_route,paste0(input$select_apt_start,input$select_apt_end),"Évolution du trafic","pax","Liaison"))
+  output$plot_route = renderPlotly(plot_evol(traffic_route,paste0(input$select_apt_start,input$select_apt_end),"Évolution du trafic","pax","Liaisons"))
   output$plot_traffic = renderPlotly(plot_evol(traffic_flows, input$select_traffic_flows, "Évolution du trafic par faisceau géographique","Mpax","Faisceaux"))
 
   # REACTIVES ----
