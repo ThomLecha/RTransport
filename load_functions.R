@@ -69,16 +69,42 @@ map_leaflet_airport <- function(months, years){
 }
 
 #PLOT ----
+
 plot_traffic_selection = function(df, selected_list){
-  df = df %>%
-    filter(selected_var %in% selected_list) %>% 
+  df = df %>% filter(selected_var %in% selected_list)
+  tmp = df
+  tmp$ligne <- 1:nrow(tmp)
+  tmp = tmp %>% select(ligne, date, anmois, an, pax)
+  mco = tmp %>% filter(anmois<"202003")#modélise jusqu'au COVID
+  lm_model <- lm(mco$pax ~ mco$ligne)#regression linéaire des moindres carrés ordinaires MCO
+  tmp$predicted_pax <- c(predict(lm_model), rep(NA, nrow(tmp) - length(predict(lm_model))))# Ajout de la colonne avec NA pour les lignes manquantes
+  tmp_annuel = tmp %>%
+    filter(an == min(an)|an == "2019") %>%
+    group_by(an) %>%
+    summarise(predicted_pax=sum(predicted_pax)) %>% 
+    ungroup() %>% 
+    mutate(an=as.integer(an))
+  n = tmp_annuel[2,1]-tmp_annuel[1,1]
+  tcam = as.numeric((tmp_annuel[2,2]/tmp_annuel[1,2])^(1/n)-1)#calcule un taux de croissance annuel moyen
+  tmp = tmp %>%
+    mutate(Mpax=round(pax/1000000,3)) %>% 
+    mutate(predicted_Mpax=round(predicted_pax/1000000,3)) %>% 
+    select(date, predicted_Mpax)
+  
+  df = df %>% 
     group_by(selected_var,date) %>%
     summarise(Mpax = round(sum(pax, na.rm = T)/1000000,3)) %>%
     ungroup()
   figure_plotly = df %>%
     plot_ly(
       x = ~date, y = ~Mpax,
-      type = 'scatter', mode = 'lines+markers', color = ~selected_var)
+      type = 'scatter', mode = 'lines+markers', color = ~selected_var
+      ) %>% 
+    add_trace(x = tmp$date, 
+              y = tmp$predicted_Mpax, 
+              name = paste0("tcam pre-covid = ",round(100*tcam,1)," %"), 
+              mode = 'lines', 
+              line = list(color = 'red'))
   return(figure_plotly)
 }
 

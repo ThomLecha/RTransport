@@ -34,7 +34,7 @@ input_airport = selectInput("select_apt",NULL,choices = list_airports,selected =
 input_airport_start = selectInput("select_apt_start",NULL,choices = list_airports,selected = "LFPG",multiple = TRUE)
 input_airport_end = selectInput("select_apt_end",NULL,choices = list_airports_end,selected = "KJFK",multiple = TRUE)
 input_airport_connect = selectInput("select_apt_connect",NULL,choices = list_airports,selected = "LFOB",multiple = TRUE)
-input_cie = selectInput("select_cie",NULL,choices = list_cie,selected = c("RYANAIR","TRANSAVIA FRANCE"),multiple = TRUE)
+input_cie = selectInput("select_cie",NULL,choices = list_cie,selected = c("RYANAIR"),multiple = TRUE)
 input_cou = selectInput("select_cou",NULL,choices = list_cou,selected = "CHINA",multiple = TRUE)
 input_ihh_flows = selectInput("select_ihh_flows",label = "Faisceaux géographiques",choices = list_ihh_flows,selected = c("Amérique du Nord", "Métro"),multiple = TRUE)
 input_price_flows = selectInput("select_price_flows",label = "Faisceaux géographiques",choices = list_price_flows,selected = c("met_inter_met","met_intal_tot"),multiple = TRUE)
@@ -51,11 +51,11 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
         menuItem("Trafic des compagnies", tabName = "cie", icon = icon("plane")),
         menuItem("Emissions de CO2", tabName = "co2", icon = icon("temperature-high")),
         menuItem("Prix", tabName = "iptap", icon = icon("euro-sign")),
-        menuItem("Concentration", tabName = "ihh", icon = icon("key")),
-        menuItem("Connectivité", tabName = "connect", icon = icon("key")),
-        menuItem("Trafic", tabName = "traffic", icon = icon("key")),
-        menuItem("Trafic entre 2 aéroports", tabName = "route_apt", icon = icon("key")),
+        menuItem("Concentration par faisceau", tabName = "ihh", icon = icon("key")),
+        menuItem("Trafic par faisceau", tabName = "traffic", icon = icon("key")),
         menuItem("Trafic avec un pays", tabName = "route_cou", icon = icon("key")),
+        menuItem("Trafic entre 2 aéroports", tabName = "route_apt", icon = icon("key")),
+        menuItem("Connectivité des aéroports", tabName = "connect", icon = icon("key")),
         menuItem("Recherche apt ou cie", tabName = "search", icon = icon("key"))
         )
       )
@@ -194,7 +194,7 @@ server <- function(input, output, session) {
   output$plot_apt = renderPlotly(plot_traffic_selection(pax_apt_all %>% mutate(selected_var=apt,pax = apt_pax),input$select_apt))
   output$plot_cie = renderPlotly(plot_traffic_selection(pax_cie_all %>% mutate(selected_var=cie_nom,pax = cie_pax),input$select_cie))
   output$plot_cou = renderPlotly(plot_evol(traffic_cou,input$select_cou,"Évolution du trafic","pax","Pays"))
-  output$plot_connect = renderPlotly(plot_evol(traffic_connect,input$select_apt_connect,"Nombre de destinations directes","Connectivité","Aéroports"))
+  output$plot_connect = renderPlotly(plot_evol(traffic_connect,input$select_apt_connect,"Connectivité","Nombre de destinations directes","Aéroports"))
   output$plot_ihh = renderPlotly(plot_evol(traffic_ihh,input$select_ihh_flows,"Évolution de la concentration","IHH","Faisceaux"))
   output$plot_price = renderPlotly(plot_evol(iptap,input$select_price_flows, "Évolution des prix par faisceau géographique", "IPTAP", "Faisceaux"))
   output$plot_route = renderPlotly(plot_evol(traffic_route,paste0(input$select_apt_start,input$select_apt_end),"Évolution du trafic","pax","Liaisons"))
