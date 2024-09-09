@@ -9,6 +9,7 @@ if (!exists("pax_apt_all")){ # Avoid loading libraries, functions and data if al
   library(dplyr)
   library(ggplot2)
   library(leaflet) # realize maps
+  library(minpack.lm)  # ajustement non-linéaire
   library(lubridate) # handle dates
   library(plotly) # creates interactives graphs
   library(readr)

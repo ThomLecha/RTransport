@@ -68,43 +68,103 @@ map_leaflet_airport <- function(months, years){
   return(carte_interactive)
 }
 
-#PLOT ----
+#PLOT & PREDICTION MODELS----
+# Définir le modèle: y = a/x + b + c*x
+modele <- function(par, x) {
+  a <- par[1]
+  b <- par[2]
+  c <- par[3]
+  return(a/x + b + c*x)
+}
+# Fonction objectif (somme des carrés des écarts)
+objectif <- function(par, x, y) {
+  y_pred <- modele(par, x)
+  return(y - y_pred)
+}
+
+#df=pax_cie_all %>% mutate(selected_var=cie_nom,pax = cie_pax)
+#selected_list = "RYANAIR"
+#title_plot = "Trafic cie"
+#title_y="pax"
+#legend_y="année"
 
 plot_traffic_selection = function(df, selected_list){
-  df = df %>% filter(selected_var %in% selected_list)
-  tmp = df
-  tmp$ligne <- 1:nrow(tmp)
-  tmp = tmp %>% select(ligne, date, anmois, an, pax)
-  mco = tmp %>% filter(anmois<"202003")#modélise jusqu'au COVID
-  lm_model <- lm(mco$pax ~ mco$ligne)#regression linéaire des moindres carrés ordinaires MCO
-  tmp$predicted_pax <- c(predict(lm_model), rep(NA, nrow(tmp) - length(predict(lm_model))))# Ajout de la colonne avec NA pour les lignes manquantes
-  tmp_annuel = tmp %>%
-    filter(an == min(an)|an == "2019") %>%
-    group_by(an) %>%
-    summarise(predicted_pax=sum(predicted_pax)) %>% 
-    ungroup() %>% 
-    mutate(an=as.integer(an))
-  n = tmp_annuel[2,1]-tmp_annuel[1,1]
-  tcam = as.numeric((tmp_annuel[2,2]/tmp_annuel[1,2])^(1/n)-1)#calcule un taux de croissance annuel moyen
-  tmp = tmp %>%
+  df = df %>% 
+    filter(selected_var %in% selected_list) %>% 
+    select(selected_var, date, anmois, an, pax)
+  predict1 = df %>% filter(anmois<"202003")#modélise jusqu'au COVID
+  predict1$ligne <- 1:nrow(predict1)
+  lm_model <- lm(predict1$pax ~ predict1$ligne)#regression linéaire par les moindres carrés ordinaires MCO
+  #n = length(predict(lm_model))
+  y_pred = predict(lm_model)
+  n = length(y_pred)
+  tcam=round(100*((y_pred[n]/y_pred[1])^(12/n)-1),1)
+  df$predicted_pax <- c(y_pred, rep(NA, nrow(df)-n))# Ajout de la colonne avec NA pour les lignes manquantes
+  predict2 = df %>% filter(anmois>"202104")#modélise après le COVID
+  predict2$ligne <- 1:nrow(predict2)
+  param_init <- c(a = 1, b = 1, c = 1)  # Valeurs initiales a, b, c du modèle y = a/x + b + c*x
+  resultat <- nls.lm(param_init, fn = objectif, x = predict2$ligne, y = predict2$pax) # Ajustement du modèle non-linéaire
+  coefficients <- resultat$par  # Récupérer les coefficients ajustés
+  a <- coefficients[1]
+  b <- coefficients[2]
+  c <- coefficients[3]
+  y_pred <- modele(c(a, b, c), predict2$ligne)  # Générer les prédictions avec le modèle ajusté
+  n = length(y_pred)
+  df$predicted2_pax <- c(rep(NA, nrow(df) - n), y_pred)# Ajout de la colonne avec NA pour les lignes manquantes
+  tcam2=round(100*((y_pred[n]/y_pred[n-1])^12-1),1)
+
+  df = df %>%
     mutate(Mpax=round(pax/1000000,3)) %>% 
     mutate(predicted_Mpax=round(predicted_pax/1000000,3)) %>% 
-    select(date, predicted_Mpax)
-  
-  df = df %>% 
-    group_by(selected_var,date) %>%
-    summarise(Mpax = round(sum(pax, na.rm = T)/1000000,3)) %>%
-    ungroup()
+    mutate(predicted2_Mpax=round(predicted2_pax/1000000,3)) %>% 
+    select(date, Mpax, predicted_Mpax, predicted2_Mpax, selected_var)
   figure_plotly = df %>%
     plot_ly(
       x = ~date, y = ~Mpax,
       type = 'scatter', mode = 'lines+markers', color = ~selected_var
       ) %>% 
-    add_trace(x = tmp$date, 
-              y = tmp$predicted_Mpax, 
-              name = paste0("tcam pre-covid = ",round(100*tcam,1)," %"), 
-              mode = 'lines', 
-              line = list(color = 'red'))
+    add_trace(
+      y = ~predicted_Mpax,
+      mode = 'lines', 
+      line = list(color = 'red')) %>% 
+    add_trace(
+      y = ~predicted2_Mpax,
+      mode = 'lines', 
+      line = list(color = 'red')) %>% 
+    layout(
+      showlegend = FALSE,
+      title = list(
+        text = paste0("tcam pre-covid = ",tcam,"%, post-covid = ",tcam2,"%"),# post-covid = ", round(100*tcam2,1)," %"),     # Le texte du titre
+        x = 0.5,              # Centrer le titre horizontalement
+        xanchor = "center",   # Ancrage du titre au centre
+        y = 0.95,              # Positionner légèrement au-dessus du graphique
+        yanchor = "top"       # Ancrage en haut
+      ),
+      shapes = list(
+        list(
+          type = "rect",
+          x0 = as.Date("2020-03-15"), x1 = as.Date("2021-04-15"),
+          y0 = min(df$Mpax), y1 = max(df$Mpax),
+          fillcolor = "rgba(100, 100, 200, 0.3)",  # Couleur de la zone (avec transparence)
+          line = list(width = 0),  # Pas de bordure
+          layer = "below") # Placer la forme en dessous des traces
+      ),
+      
+      # Ajouter un texte "COVID" au centre de la zone hachurée
+      annotations = list(
+        list(
+          x = as.Date("2020-09-01"),  # Date au centre de la période
+          y = max(df$Mpax) * 0.5,     # Position verticale du texte à 50% du max des valeurs de Mpax
+          text = "COVID",
+          xref = "x",  # Référencer l'axe x
+          yref = "y",  # Référencer l'axe y
+          showarrow = FALSE,
+          font = list(size = 20, color = "black", family = "Arial", bold = TRUE),  # Texte en gras
+          xanchor = 'center',
+          yanchor = 'middle')
+      )
+      )
+  
   return(figure_plotly)
 }
 
