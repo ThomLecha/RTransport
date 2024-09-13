@@ -1,21 +1,40 @@
 ##################################
-###         R TRANSPORT        ###
+###   R TRANSPORT - DATA       ###
 ##################################
 
 n = stringr::str_locate(getwd(),"Documents")[2]
-datapath = paste0(stringr::str_sub(getwd(),1,n),"/init.R")
+datadir = stringr::str_sub(getwd(),1,n)
+datapath = paste0(datadir,"/init.R")
 rm(n)
 user_app =  file.exists(datapath) # add user item and applications if TRUE, do nothing if FALSE
-#user_app = FALSE #test when false
+user_app = FALSE #test when false
 year_num = 2019:2024 #annees d'observation par ex. c(2019,2022,2023, 2024)
 year_char = as.list(as.character(year_num))
 month_char = c(paste0("0", 1:9),10:12) #mois d'observation par ex. c("04", "05","06")
 month_num = as.list(as.integer(month_char))
 
-datapath_apt = "https://www.data.gouv.fr/fr/datasets/r/884e5754-2ad6-436d-9699-148e3f6e2b7c"
-datapath_cie = "https://www.data.gouv.fr/fr/datasets/r/314cfa80-fe1f-4834-b18e-93476eb82c91"
-#datapath_lsn = "https://www.data.gouv.fr/fr/datasets/r/a3947c3b-36ae-4aa0-bee2-323f6d684f0e"
-datapath_iptap = "https://www.data.gouv.fr/fr/datasets/r/ca158a15-0f41-4528-b370-282ce04e22d4"
+
+datapath_apt = paste0(datadir,"/asp-apt.parquet")
+datapath_cie = paste0(datadir,"/asp-cie.parquet")
+datapath_iptap = paste0(datadir,"/asp-iptap.csv")
+
+tryCatch({
+  # Lecture du fichier CSV
+  read.csv("https://www.data.gouv.fr/fr/datasets/r/ca158a15-0f41-4528-b370-282ce04e22d4", header=TRUE,sep=";",dec=",")
+  
+  datapath_apt = "https://www.data.gouv.fr/fr/datasets/r/884e5754-2ad6-436d-9699-148e3f6e2b7c"
+  datapath_cie = "https://www.data.gouv.fr/fr/datasets/r/314cfa80-fe1f-4834-b18e-93476eb82c91"
+  #datapath_lsn = "https://www.data.gouv.fr/fr/datasets/r/a3947c3b-36ae-4aa0-bee2-323f6d684f0e"
+  datapath_iptap = "https://www.data.gouv.fr/fr/datasets/r/ca158a15-0f41-4528-b370-282ce04e22d4"
+}, 
+# Gestion de l'erreur
+error = function(e) {
+  # Si une erreur survient, afficher "erreur"
+  print("erreur de chargement sur internet, chargement de secours sur DD")
+  #datapath_apt = paste0(datadir,"/asp-apt.parquet")
+  #datapath_cie = paste0(datadir,"/asp-cie.parquet")
+  #datapath_iptap = paste0(datadir,"/asp-iptap.csv")
+})
 
 iptap = clean_dataframe(read.csv(datapath_iptap, header=TRUE,sep=";",dec=",")) %>% mutate(date = as.Date(paste(anmois, "15", sep=""), format = "%Y%m%d"))
 pax_apt_all = clean_dataframe(read_parquet(datapath_apt)) %>% 

@@ -1,5 +1,5 @@
 ##################################
-###         R TRANSPORT        ###
+###   R TRANSPORT - FUNCTIONS  ###
 ##################################
 
 # INPUT DATE SELECTION----
@@ -7,7 +7,7 @@ input_date <- function(input_id, label, maxDate) {
   shinyWidgets::airDatepickerInput(
     inputId = input_id,
     label = label,
-    value = maxDate,
+    #value = maxDate,
     multiple = TRUE,
     view = "months",
     minView = "months",
@@ -82,102 +82,97 @@ objectif <- function(par, x, y) {
   return(y - y_pred)
 }
 
+#TESTING ZONE
+#selected_list = c("met_inter_met","met_inter_om")
+#selected_list = c("met_inter_met")
+#df = iptap
+
+#selected_list = c("RYANAIR","TRANSAVIA FRANCE")
 #df=pax_cie_all %>% mutate(selected_var=cie_nom,pax = cie_pax)
-#selected_list = "RYANAIR"
-#title_plot = "Trafic cie"
-#title_y="pax"
-#legend_y="année"
 
 plot_traffic_selection = function(df, selected_list){
-  df = df %>% 
-    filter(selected_var %in% selected_list) %>% 
-    select(selected_var, date, anmois, an, pax)
-  predict1 = df %>% filter(anmois<"202003")#modélise jusqu'au COVID
-  predict1$ligne <- 1:nrow(predict1)
-  lm_model <- lm(predict1$pax ~ predict1$ligne)#regression linéaire par les moindres carrés ordinaires MCO
-  #n = length(predict(lm_model))
-  y_pred = predict(lm_model)
-  n = length(y_pred)
-  tcam=round(100*((y_pred[n]/y_pred[1])^(12/n)-1),1)
-  df$predicted_pax <- c(y_pred, rep(NA, nrow(df)-n))# Ajout de la colonne avec NA pour les lignes manquantes
-  predict2 = df %>% filter(anmois>"202104")#modélise après le COVID
-  predict2$ligne <- 1:nrow(predict2)
-  param_init <- c(a = 1, b = 1, c = 1)  # Valeurs initiales a, b, c du modèle y = a/x + b + c*x
-  resultat <- nls.lm(param_init, fn = objectif, x = predict2$ligne, y = predict2$pax) # Ajustement du modèle non-linéaire
-  coefficients <- resultat$par  # Récupérer les coefficients ajustés
-  a <- coefficients[1]
-  b <- coefficients[2]
-  c <- coefficients[3]
-  y_pred <- modele(c(a, b, c), predict2$ligne)  # Générer les prédictions avec le modèle ajusté
-  n = length(y_pred)
-  df$predicted2_pax <- c(rep(NA, nrow(df) - n), y_pred)# Ajout de la colonne avec NA pour les lignes manquantes
-  tcam2=round(100*((y_pred[n]/y_pred[n-1])^12-1),1)
-
+  if("selected_var" %in% colnames(df)){# transpose le dataframe df s'il est sous la forme d'une variable, ex. pax, qu'il faut positionner en colonne, ex. c("Pax AF", "Pax Lufthansa")
+    df = df %>% 
+      filter(selected_var %in% selected_list) %>% 
+      group_by(date, selected_var) %>%
+      summarise(Value = sum(pax, na.rm=T)) %>%
+      ungroup() %>%
+      tidyr::pivot_wider(names_from = selected_var, values_from = Value)
+  }
   df = df %>%
-    mutate(Mpax=round(pax/1000000,3)) %>% 
-    mutate(predicted_Mpax=round(predicted_pax/1000000,3)) %>% 
-    mutate(predicted2_Mpax=round(predicted2_pax/1000000,3)) %>% 
-    select(date, Mpax, predicted_Mpax, predicted2_Mpax, selected_var)
-  figure_plotly = df %>%
-    plot_ly(
-      x = ~date, y = ~Mpax,
-      type = 'scatter', mode = 'lines+markers', color = ~selected_var
-      ) %>% 
-    add_trace(
-      y = ~predicted_Mpax,
-      mode = 'lines', 
-      line = list(color = 'red')) %>% 
-    add_trace(
-      y = ~predicted2_Mpax,
-      mode = 'lines', 
-      line = list(color = 'red')) %>% 
-    layout(
-      showlegend = FALSE,
-      title = list(
-        text = paste0("tcam pre-covid = ",tcam,"%, post-covid = ",tcam2,"%"),# post-covid = ", round(100*tcam2,1)," %"),     # Le texte du titre
-        x = 0.5,              # Centrer le titre horizontalement
-        xanchor = "center",   # Ancrage du titre au centre
-        y = 0.95,              # Positionner légèrement au-dessus du graphique
-        yanchor = "top"       # Ancrage en haut
-      ),
-      shapes = list(
-        list(
-          type = "rect",
-          x0 = as.Date("2020-03-15"), x1 = as.Date("2021-04-15"),
-          y0 = min(df$Mpax), y1 = max(df$Mpax),
-          fillcolor = "rgba(100, 100, 200, 0.3)",  # Couleur de la zone (avec transparence)
-          line = list(width = 0),  # Pas de bordure
-          layer = "below") # Placer la forme en dessous des traces
-      ),
-      
-      # Ajouter un texte "COVID" au centre de la zone hachurée
-      annotations = list(
-        list(
-          x = as.Date("2020-09-01"),  # Date au centre de la période
-          y = max(df$Mpax) * 0.5,     # Position verticale du texte à 50% du max des valeurs de Mpax
-          text = "COVID",
-          xref = "x",  # Référencer l'axe x
-          yref = "y",  # Référencer l'axe y
-          showarrow = FALSE,
-          font = list(size = 20, color = "black", family = "Arial", bold = TRUE),  # Texte en gras
-          xanchor = 'center',
-          yanchor = 'middle')
-      )
-      )
-  
-  return(figure_plotly)
-}
-
-plot_evol = function(df, selected, title_plot, title_y, legend_y){
-  df = df %>% select("date",all_of(selected))
-  data_long = melt(df, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
+    select(date,all_of(selected_list)) %>% 
+    arrange(date)
+  date_first = year(min(df$date))
+  precovid = df %>% filter(date<as.Date("2020-03-01"))#modélise jusqu'au COVID
+  postcovid = df %>% filter(date>as.Date("2021-04-30"))#modélise après le COVID
+  evol_precovid=NULL
+  tcam_precovid=NULL
+  evol_postcovid=NULL
+  tcam_postcovid=NULL
+  i=0
+  for (var in selected_list){#calculate aagr for each selectionned variable
+    i=i+1
+    tmp = precovid %>%
+      select(date,var) %>% 
+      rename("Value"=var)
+    tmp$ligne <- 1:nrow(tmp)
+    lm_model <- lm(tmp$Value ~ tmp$ligne)#regression linéaire par les moindres carrés ordinaires MCO
+    y_pred = predict(lm_model)
+    n = length(y_pred)
+    evol_precovid[i]=(y_pred[12]-y_pred[1])/100
+    Value_t1 = as.integer(tmp %>% filter(year(date)==date_first) %>% summarise(Value=sum(Value)))
+    Value_t2 = as.integer(tmp %>% filter(year(date)=="2019") %>% summarise(Value=sum(Value)))
+    tcam_precovid[i] = round(100*((Value_t2/Value_t1)^(1/(2019-date_first))-1),1)
+    var2 = paste0(var,"_precovid")
+    df[[var2]] = c(y_pred, rep(NA, nrow(df)-n))# Ajout de la colonne avec NA pour les lignes manquantes
+    tmp = postcovid %>%
+      select(date,var) %>% 
+      rename("Value"=var)
+    tmp$ligne <- 1:nrow(tmp)
+    param_init <- c(a = 1, b = 1, c = 1)  # Valeurs initiales a, b, c du modèle y = a/x + b + c*x
+    resultat <- nls.lm(param_init, fn = objectif, x = tmp$ligne, y = tmp$Value) # Ajustement du modèle non-linéaire
+    coefficients <- resultat$par  # Récupérer les coefficients ajustés
+    a <- coefficients[1]
+    b <- coefficients[2]
+    c <- coefficients[3]
+    y_pred <- modele(c(a, b, c), tmp$ligne)  # Générer les prédictions avec le modèle ajusté
+    n = length(y_pred)
+    evol_postcovid[i]=(y_pred[n]-y_pred[n-1])
+    var2 = paste0(var,"_postcovid")
+    df[[var2]] = c(rep(NA, nrow(df) - n), y_pred)# Ajout de la colonne avec NA pour les lignes manquantes
+    tcam_postcovid[i]=round(100*((y_pred[n]/y_pred[n-1])^12-1),1)
+  }
+  title_plot=paste0(unlist(tcam_precovid), collapse = "% & ")
+  title_plot=paste0("tcam pre-covid : ", title_plot,"%, tcam post-covid : ")
+  tmp=paste0(unlist(tcam_postcovid), collapse = "% & ")
+  title_plot=paste0(title_plot,tmp,"%")
+  data_long = reshape2::melt(df, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
   figure_plotly <- data_long %>%
     plot_ly(x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%
     layout(
-      title = title_plot,
+      title = list(text = title_plot,
+                   x = 0.5,              # Centrer le titre horizontalement
+                   xanchor = "center",   # Ancrage du titre au centre
+                   y = 0.95,              # Positionner légèrement au-dessus du graphique
+                   yanchor = "top"       # Ancrage en haut
+      ),
       xaxis = list(title = 'Date'),
-      yaxis = list(title = title_y),
-      legend = list(title = list(text = legend_y))
-    )
+      shapes = list(list(type = "rect",
+                         x0 = as.Date("2020-03-15"), x1 = as.Date("2021-05-01"),
+                         y0 = min(data_long$Value, na.rm = TRUE), y1 = max(data_long$Value, na.rm = TRUE),
+                         fillcolor = "rgba(100, 100, 200, 0.3)",  # Couleur de la zone (avec transparence)
+                         line = list(width = 0),  # Pas de bordure
+                         layer = "below") # Placer la forme en dessous des traces
+      ),
+      annotations = list(list(x = as.Date("2020-10-01"),  # Date au centre de la période
+                              y = max(data_long$Value, na.rm = TRUE) * 0.8,     # Position verticale du texte à 50% du max des valeurs de Mpax
+                              text = "COVID",
+                              xref = "x",  # Référencer l'axe x
+                              yref = "y",  # Référencer l'axe y
+                              showarrow = FALSE,
+                              font = list(size = 20, color = "black", family = "Arial", bold = TRUE),  # Texte en gras
+                              xanchor = 'center',
+                              yanchor = 'middle')
+    ))
   return(figure_plotly)
 }

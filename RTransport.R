@@ -1,5 +1,5 @@
 ##################################
-###    R TRANSPORT FRANCE      ###
+###   R TRANSPORT - MAIN       ###
 ##################################
 
 # rm(list = ls())
@@ -23,9 +23,11 @@ if (!exists("pax_apt_all")){ # Avoid loading libraries, functions and data if al
 }
 
 # UI User Interface ----
-
-# User Interface Inputs
+# UI Inputs ----
 main_color = "black"
+
+input_submit = actionButton(inputId = "submit", label = "LOAD & SAVE")
+
 input_date_apt = input_date("date_apt", "Période d'observation", date_max) 
 input_date_cie = input_date("date_cie", "Période d'observation", date_max)
 input_date_route_apt = input_date("date_route_apt", "Période d'observation", date_max2)
@@ -37,69 +39,55 @@ input_airport_end = selectInput("select_apt_end",NULL,choices = list_airports_en
 input_airport_connect = selectInput("select_apt_connect",NULL,choices = list_airports,selected = "LFOB",multiple = TRUE)
 input_cie = selectInput("select_cie",NULL,choices = list_cie,selected = c("RYANAIR"),multiple = TRUE)
 input_cou = selectInput("select_cou",NULL,choices = list_cou,selected = "CHINA",multiple = TRUE)
-input_ihh_flows = selectInput("select_ihh_flows",label = "Faisceaux géographiques",choices = list_ihh_flows,selected = c("Amérique du Nord", "Métro"),multiple = TRUE)
-input_price_flows = selectInput("select_price_flows",label = "Faisceaux géographiques",choices = list_price_flows,selected = c("met_inter_met","met_intal_tot"),multiple = TRUE)
+input_ihh_flows = selectInput("select_ihh_flows",label = "Faisceaux géographiques",choices = list_ihh_flows,selected = c("Métro"),multiple = TRUE)
+input_price_flows = selectInput("select_price_flows",label = "Faisceaux géographiques",choices = list_price_flows,selected = c("met_inter_met"),multiple = TRUE)
 input_traffic_flows = selectInput("select_traffic_flows",label = "Faisceaux géographiques",choices = list_traffic_flows,selected = c("Amérique du Nord", "Métro"),multiple = TRUE)
 
-# User Interface define
+# UI Define ----
 ui <- dashboardPage(dashboardHeader(title = "R Transport"),
   
-  # SIDEBAR MENU ----
-  if (user_app) {
-    dashboardSidebar(
-      sidebarMenu(
-        menuItem("Trafic des aéroports français", tabName = "apt", icon = icon("passport")),
-        menuItem("Trafic des compagnies", tabName = "cie", icon = icon("plane")),
-        menuItem("Emissions de CO2", tabName = "co2", icon = icon("temperature-high")),
-        menuItem("Prix", tabName = "iptap", icon = icon("euro-sign")),
-        menuItem("Concentration par faisceau", tabName = "ihh", icon = icon("key")),
-        menuItem("Trafic par faisceau", tabName = "traffic", icon = icon("key")),
-        menuItem("Trafic avec un pays", tabName = "route_cou", icon = icon("key")),
-        menuItem("Trafic entre 2 aéroports", tabName = "route_apt", icon = icon("key")),
-        menuItem("Connectivité des aéroports", tabName = "connect", icon = icon("key")),
-        menuItem("Recherche apt ou cie", tabName = "search", icon = icon("key"))
-        )
-      )
-  } else {
-    dashboardSidebar(
-      sidebarMenu(
-        menuItem("Trafic des aéroports français", tabName = "apt", icon = icon("passport")),
-        menuItem("Trafic des compagnies", tabName = "cie", icon = icon("plane")),
-        menuItem("Emissions de CO2", tabName = "co2", icon = icon("temperature-high")),
-        menuItem("Prix", tabName = "iptap", icon = icon("euro-sign"))
-      )
-    )
-  }
+  # SIDEBAR MENU
+  if (user_app) { dashboardSidebar(sidebarMenu(
+    menuItem("Trafic par aéroport", tabName = "apt", icon = icon("passport")),
+    menuItem("Trafic par compagnie", tabName = "cie", icon = icon("plane")),
+    menuItem("Emissions de CO2", tabName = "co2", icon = icon("temperature-high")),
+    menuItem("Indice des prix", tabName = "iptap", icon = icon("euro-sign")),
+    menuItem("Concentration IHH", tabName = "ihh", icon = icon("key")),
+    menuItem("Faisceaux", tabName = "traffic", icon = icon("key")),
+    menuItem("Pays", tabName = "route_cou", icon = icon("key")),
+    menuItem("Routes", tabName = "route_apt", icon = icon("key")),
+    menuItem("Connectivité", tabName = "connect", icon = icon("key")),
+    menuItem("SEARCH", tabName = "search", icon = icon("hand-sparkles")),
+    menuItem("SAVE DATA", tabName = "save_data", icon = icon("hand-sparkles"))
+    ))
+  } else { dashboardSidebar(sidebarMenu(
+    menuItem("Trafic des aéroports français", tabName = "apt", icon = icon("passport")),
+    menuItem("Trafic des compagnies", tabName = "cie", icon = icon("plane")),
+    menuItem("Emissions de CO2", tabName = "co2", icon = icon("temperature-high")),
+    menuItem("Prix", tabName = "iptap", icon = icon("euro-sign"))
+    ))}
   ,
   
-  # MAIN BODY CONTENT ----
-  dashboardBody(
-    tabItems(
-      # Airport traffic
-      tabItem(tabName = "apt",
-              h2("Tableau de bord du trafic aérien réalisé lors du Funathon 2024 Insee & DGAC"),
-              bg = main_color,
-              inverse = TRUE,
-              layout_columns(
-                card(
-                  HTML('<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️ refaire ce type de tableau en R ou Python</a>'),
-                  HTML('<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️ séries accessibles sur data.gouv.fr</a>'),
-                  input_date_apt,
-                  DT::DTOutput("table_traffic_apt")
-                ),
-                layout_columns(
-                  card(leafletOutput("carte")),
-                  card(card_header("Aéroports", class = "bg-dark"),
-                       input_airport,
-                       plotlyOutput("plot_apt")),
-                  col_widths = c(12,12)
-                ),
-                cols_widths = c(12,12,12)
-              )
-      ),
+  # MAIN BODY CONTENT
+  dashboardBody(tabItems( 
+    tabItem(tabName = "apt", # Airport traffic
+            h2("Tableau de bord du trafic aérien réalisé lors du Funathon 2024 Insee & DGAC"),
+            bg = main_color,
+            inverse = TRUE,
+            layout_columns(card(
+              HTML('<a href="https://inseefrlab.github.io/funathon2024_sujet2/">👉️ refaire ce type de tableau en R ou Python</a>'),
+              HTML('<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️ séries accessibles sur data.gouv.fr</a>'),
+              input_date_apt,
+              DT::DTOutput("table_traffic_apt")),
+              layout_columns(card(leafletOutput("carte")),
+                             card(card_header("Aéroports", class = "bg-dark"),
+                                  input_airport,
+                                  plotlyOutput("plot_apt")),
+                             col_widths = c(12,12)),
+              cols_widths = c(12,12,12))
+            ),
       
-      # Company traffic
-      tabItem(tabName = "cie",
+      tabItem(tabName = "cie",      # Company traffic
               h2("Trafic aérien des compagnies, en millions de passagers, source DGAC"),
               HTML('<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️ séries accessibles sur data.gouv.fr</a>'),
               input_cie,
@@ -108,37 +96,32 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
               DT::DTOutput("table_traffic_cie")
       ),
       
-      # CO2 emissions
-      tabItem(tabName = "co2",
+      tabItem(tabName = "co2", # CO2 emissions
               h2("Emissions de CO2 du trafic aérien, en million de tonnes, source DGAC"),
               HTML('<a href="https://www.ecologie.gouv.fr/politiques-publiques/emissions-gazeuses-liees-trafic-aerien">👉️ bilan des émissions gazeuses du transport aérien</a>')
       ),
       
-      # Price index
-      tabItem(tabName = "iptap",
+      tabItem(tabName = "iptap", # Price index
               h2("Indice des prix du transport aérien - IPTAP, source DGAC"),
               HTML('<a href="https://www.data.gouv.fr/fr/datasets/indices-des-prix-du-transport-aerien-de-passagers/">👉 séries accessibles sur data.gouv.fr</a>'),
               input_price_flows,
               plotlyOutput("plot_price")
       ),
       
-      # Connectivity
-      tabItem(tabName = "connect",
+      tabItem(tabName = "connect", # Connectivity
               h2("Connectivité directe, source DGAC"),
               input_airport_connect,
               plotlyOutput("plot_connect")
       ),
 
-      # Concentration index
-      tabItem(tabName = "ihh",
+      tabItem(tabName = "ihh", # Concentration index
               h2("Indice de Herfindahl-Hirschman - IHH, source DGAC"),
               HTML('<a href="https://www.ecologie.gouv.fr/politiques-publiques/observatoire-concurrence">👉 observatoire de la concurrence</a>'),
               input_ihh_flows,
               plotlyOutput("plot_ihh")
       ),
       
-      # Traffic flows
-      tabItem(tabName = "traffic",
+      tabItem(tabName = "traffic", # Traffic flows
               input_traffic_flows,
               plotlyOutput("plot_traffic"),
               verbatimTextOutput(outputId = "texte"),
@@ -151,8 +134,7 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
               DT::dataTableOutput("table_traffic")
       ),
       
-      # Route selection and traffic between 2 airports
-      tabItem(tabName = "route_apt",
+      tabItem(tabName = "route_apt", # Route selection and traffic between 2 airports
               input_airport_start,
               input_airport_end,
               plotlyOutput("plot_route"),
@@ -160,47 +142,65 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
               DT::dataTableOutput("table_route_apt")
       ),
 
-      # Route selection and traffic with a foreign country
-      tabItem(tabName = "route_cou",
+      tabItem(tabName = "route_cou", # Route selection and traffic with a foreign country
               input_cou,
               plotlyOutput("plot_cou"),
               input_date_route_cou,
               DT::dataTableOutput("table_route_cou")
       ),
       
-      # Search airport or airline
-      tabItem(tabName = "search",
-              textInput(
-                inputId = "airport_lib",
-                label = "Airport",
-                value = "orly"
-              ),
+      tabItem(tabName = "search", # Search airport or airline
+              textInput(inputId = "airport_lib",
+                        label = "Airport",
+                        value = "orly"),
               DT::dataTableOutput("table_search_apt"),
-              textInput(
-                inputId = "company_lib",
-                label = "Company",
-                value = "tvf"
-              ),
+              textInput(inputId = "company_lib",
+                        label = "Company",
+                        value = "tvf"),
               DT::dataTableOutput("table_search_cie")
+              ),
+      
+      tabItem(tabName = "save_data", # SAVE DATA
+              input_submit,
+              #textOutput("year_output"),  # Pour afficher la valeur de y
+              textOutput("result_submit")  # Pour afficher le message "data loaded"
               )
-      )
+    )
     )
   )
 
 # SERVER ----
 server <- function(input, output, session) {
+  # SUBMIT ----
+  observeEvent(input$submit, {# Action lors du clic sur le bouton "submit"
+    showModal(modalDialog(# Afficher une boîte de dialogue de confirmation
+      title = "ATTENTION OPERATION LONGUE",
+      "Confirmez-vous ?",
+      footer = tagList(
+        modalButton("Annuler"),
+        actionButton("confirm", "Confirmer")))
+      )
+    })
+  
+  observeEvent(input$confirm, {  # Action lors de la confirmation
+    removeModal()    # Fermer la boîte de dialogue
+    t1 <- Sys.time()    # Calcul après confirmation
+    filepath=paste0(userdir,"save_data.R")
+    source(filepath)
+    output$result_submit <- renderText({paste0("Data loaded and saved in ", Sys.time() - t1)})
+  })
   
   # MAPS & PLOTS ----
   output$carte = renderLeaflet(map_leaflet_airport(month(input$date_apt), year(input$date_apt)))
   output$plot_apt = renderPlotly(plot_traffic_selection(pax_apt_all %>% mutate(selected_var=apt,pax = apt_pax),input$select_apt))
   output$plot_cie = renderPlotly(plot_traffic_selection(pax_cie_all %>% mutate(selected_var=cie_nom,pax = cie_pax),input$select_cie))
-  output$plot_cou = renderPlotly(plot_evol(traffic_cou,input$select_cou,"Évolution du trafic","pax","Pays"))
-  output$plot_connect = renderPlotly(plot_evol(traffic_connect,input$select_apt_connect,"Connectivité","Nombre de destinations directes","Aéroports"))
-  output$plot_ihh = renderPlotly(plot_evol(traffic_ihh,input$select_ihh_flows,"Évolution de la concentration","IHH","Faisceaux"))
-  output$plot_price = renderPlotly(plot_evol(iptap,input$select_price_flows, "Évolution des prix par faisceau géographique", "IPTAP", "Faisceaux"))
-  output$plot_route = renderPlotly(plot_evol(traffic_route,paste0(input$select_apt_start,input$select_apt_end),"Évolution du trafic","pax","Liaisons"))
-  output$plot_traffic = renderPlotly(plot_evol(traffic_flows, input$select_traffic_flows, "Évolution du trafic par faisceau géographique","Mpax","Faisceaux"))
-
+  output$plot_cou = renderPlotly(plot_traffic_selection(traffic_cou,input$select_cou))
+  output$plot_connect = renderPlotly(plot_traffic_selection(traffic_connect,input$select_apt_connect))
+  output$plot_ihh = renderPlotly(plot_traffic_selection(traffic_ihh,input$select_ihh_flows))
+  output$plot_price = renderPlotly(plot_traffic_selection(iptap,input$select_price_flows))
+  output$plot_route = renderPlotly(plot_traffic_selection(traffic_route,paste0(input$select_apt_start,input$select_apt_end)))
+  output$plot_traffic = renderPlotly(plot_traffic_selection(traffic_flows, input$select_traffic_flows))
+  
   # REACTIVES ----
   dfrouteapt = reactive({
     df = pax_apt %>%
@@ -273,8 +273,6 @@ server <- function(input, output, session) {
       dftraffic() %>%
         filter(fluxindic==1) %>%
         group_by(routes_det) %>%
-        #group_by(faisceau, e3fscapt2) %>%
-        #group_by(bregionsueapt1, bregionsueapt2) %>%
         summarise(pax = round(sum(pax, na.rm = T)/1000000,3)) %>%
         ungroup,
       dftraffic() %>%
@@ -292,24 +290,15 @@ server <- function(input, output, session) {
   extensions = c("Scroller", "FixedColumns", "Buttons", "Select"), 
   selection = "none",
   options = list(
-    #pageLength = 3,
-    #lengthMenu = c(3, 14, 22),
     autoWidth = T,
     columnDefs = list(list(width = '20px', targets = c(0,1,2))),
     dom = "Bfrtip", 
-    # scroll :
     scrollY = 285, scrollX = 400, scroller = TRUE,
-    #scrollY = 145, scrollX = 400, scroller = TRUE,
-    # fixer les colonnes : 
     fixedColumns = list(leftColumns = 1),
-    # selection :
     select = list(style = 'os', items = 'row'),
-    buttons = c(
-      # enregistrements
-      'copy', 'csv',
-      # visualisation des colonnes
-      'colvis',
-      # selection des elements
+    buttons = c(# enregistrements
+      'copy', 'csv',# visualisation des colonnes
+      'colvis',# sélection des elements
       'selectAll', 'selectNone', 'selectRows', 'selectColumns', 'selectCells'
     )
   )))
