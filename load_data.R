@@ -7,7 +7,7 @@ datadir = stringr::str_sub(getwd(),1,n)
 datapath = paste0(datadir,"/init.R")
 rm(n)
 user_app =  file.exists(datapath) # add user item and applications if TRUE, do nothing if FALSE
-user_app = FALSE #test when false
+#user_app = FALSE #test when false
 year_num = 2019:2024 #annees d'observation par ex. c(2019,2022,2023, 2024)
 year_char = as.list(as.character(year_num))
 month_char = c(paste0("0", 1:9),10:12) #mois d'observation par ex. c("04", "05","06")

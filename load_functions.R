@@ -86,7 +86,6 @@ objectif <- function(par, x, y) {
 #selected_list = c("met_inter_met","met_inter_om")
 #selected_list = c("met_inter_met")
 #df = iptap
-
 #selected_list = c("RYANAIR","TRANSAVIA FRANCE")
 #df=pax_cie_all %>% mutate(selected_var=cie_nom,pax = cie_pax)
 
@@ -103,7 +102,8 @@ plot_traffic_selection = function(df, selected_list){
     select(date,all_of(selected_list)) %>% 
     arrange(date)
   date_first = year(min(df$date))
-  precovid = df %>% filter(date<as.Date("2020-03-01"))#modélise jusqu'au COVID
+  date_last = year(max(df$date))
+  precovid = df %>% filter(date<as.Date("2020-01-01"))#modélise jusqu'au COVID
   postcovid = df %>% filter(date>as.Date("2021-04-30"))#modélise après le COVID
   evol_precovid=NULL
   tcam_precovid=NULL
@@ -119,9 +119,9 @@ plot_traffic_selection = function(df, selected_list){
     lm_model <- lm(tmp$Value ~ tmp$ligne)#regression linéaire par les moindres carrés ordinaires MCO
     y_pred = predict(lm_model)
     n = length(y_pred)
-    evol_precovid[i]=(y_pred[12]-y_pred[1])/100
+    evol_precovid[i]=y_pred[12]-y_pred[1]
     Value_t1 = as.integer(tmp %>% filter(year(date)==date_first) %>% summarise(Value=sum(Value)))
-    Value_t2 = as.integer(tmp %>% filter(year(date)=="2019") %>% summarise(Value=sum(Value)))
+    Value_t2 = as.integer(tmp %>% filter(year(date)==2019) %>% summarise(Value=sum(Value)))
     tcam_precovid[i] = round(100*((Value_t2/Value_t1)^(1/(2019-date_first))-1),1)
     var2 = paste0(var,"_precovid")
     df[[var2]] = c(y_pred, rep(NA, nrow(df)-n))# Ajout de la colonne avec NA pour les lignes manquantes

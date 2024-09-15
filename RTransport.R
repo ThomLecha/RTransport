@@ -33,15 +33,15 @@ input_date_cie = input_date("date_cie", "Période d'observation", date_max)
 input_date_route_apt = input_date("date_route_apt", "Période d'observation", date_max2)
 input_date_route_cou = input_date("date_route_cou", "Période d'observation", date_max2)
 
-input_airport = selectInput("select_apt",NULL,choices = list_airports,selected = "LFPG",multiple = TRUE)
+input_airport = selectInput("select_apt",NULL,choices = list_airports,selected = "LFBH",multiple = TRUE)
 input_airport_start = selectInput("select_apt_start",NULL,choices = list_airports,selected = "LFPG",multiple = TRUE)
 input_airport_end = selectInput("select_apt_end",NULL,choices = list_airports_end,selected = "KJFK",multiple = TRUE)
 input_airport_connect = selectInput("select_apt_connect",NULL,choices = list_airports,selected = "LFOB",multiple = TRUE)
 input_cie = selectInput("select_cie",NULL,choices = list_cie,selected = c("RYANAIR"),multiple = TRUE)
 input_cou = selectInput("select_cou",NULL,choices = list_cou,selected = "CHINA",multiple = TRUE)
-input_ihh_flows = selectInput("select_ihh_flows",label = "Faisceaux géographiques",choices = list_ihh_flows,selected = c("Métro"),multiple = TRUE)
-input_price_flows = selectInput("select_price_flows",label = "Faisceaux géographiques",choices = list_price_flows,selected = c("met_inter_met"),multiple = TRUE)
-input_traffic_flows = selectInput("select_traffic_flows",label = "Faisceaux géographiques",choices = list_traffic_flows,selected = c("Amérique du Nord", "Métro"),multiple = TRUE)
+input_ihh_flows = selectInput("select_ihh_flows",label = "Faisceaux géographiques",choices = list_ihh_flows,selected = c("Amérique du Nord"),multiple = TRUE)
+input_price_flows = selectInput("select_price_flows",label = "Faisceaux géographiques",choices = list_price_flows,selected = c("fra_ens"),multiple = TRUE)
+input_traffic_flows = selectInput("select_traffic_flows",NULL,choices = list_traffic_flows,selected = c("Asie-Pacifique"),multiple = TRUE)
 
 # UI Define ----
 ui <- dashboardPage(dashboardHeader(title = "R Transport"),
@@ -51,11 +51,11 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
     menuItem("Trafic par aéroport", tabName = "apt", icon = icon("passport")),
     menuItem("Trafic par compagnie", tabName = "cie", icon = icon("plane")),
     menuItem("Emissions de CO2", tabName = "co2", icon = icon("temperature-high")),
-    menuItem("Indice des prix", tabName = "iptap", icon = icon("euro-sign")),
-    menuItem("Concentration IHH", tabName = "ihh", icon = icon("key")),
+    menuItem("Prix", tabName = "iptap", icon = icon("euro-sign")),
+    menuItem("Concentration", tabName = "ihh", icon = icon("key")),
     menuItem("Faisceaux", tabName = "traffic", icon = icon("key")),
     menuItem("Pays", tabName = "route_cou", icon = icon("key")),
-    menuItem("Routes", tabName = "route_apt", icon = icon("key")),
+    menuItem("Liaisons", tabName = "route_apt", icon = icon("key")),
     menuItem("Connectivité", tabName = "connect", icon = icon("key")),
     menuItem("SEARCH", tabName = "search", icon = icon("hand-sparkles")),
     menuItem("SAVE DATA", tabName = "save_data", icon = icon("hand-sparkles"))
@@ -88,7 +88,7 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
             ),
       
       tabItem(tabName = "cie",      # Company traffic
-              h2("Trafic aérien des compagnies, en millions de passagers, source DGAC"),
+              h2("Trafic aérien de passagers des compagnies, source DGAC"),
               HTML('<a href="https://www.data.gouv.fr/fr/datasets/trafic-aerien-commercial-mensuel-francais-par-paire-daeroports-par-sens-depuis-1990/">👉️ séries accessibles sur data.gouv.fr</a>'),
               input_cie,
               plotlyOutput("plot_cie"),
@@ -102,14 +102,14 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
       ),
       
       tabItem(tabName = "iptap", # Price index
-              h2("Indice des prix du transport aérien - IPTAP, source DGAC"),
+              h2("Indice des Prix du Transport Aérien - IPTAP, base 100 en 2017, source DGAC"),
               HTML('<a href="https://www.data.gouv.fr/fr/datasets/indices-des-prix-du-transport-aerien-de-passagers/">👉 séries accessibles sur data.gouv.fr</a>'),
               input_price_flows,
               plotlyOutput("plot_price")
       ),
       
       tabItem(tabName = "connect", # Connectivity
-              h2("Connectivité directe, source DGAC"),
+              h2("Nombre de connections par aéroport , source DGAC"),
               input_airport_connect,
               plotlyOutput("plot_connect")
       ),
@@ -122,6 +122,7 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
       ),
       
       tabItem(tabName = "traffic", # Traffic flows
+              h2("Trafic aérien de passagers par faisceau, source DGAC"),
               input_traffic_flows,
               plotlyOutput("plot_traffic"),
               verbatimTextOutput(outputId = "texte"),
@@ -135,21 +136,22 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
       ),
       
       tabItem(tabName = "route_apt", # Route selection and traffic between 2 airports
+              h2("Trafic aérien de passagers par liaison, source DGAC"),
               input_airport_start,
               input_airport_end,
               plotlyOutput("plot_route"),
               input_date_route_apt,
               DT::dataTableOutput("table_route_apt")
       ),
-
       tabItem(tabName = "route_cou", # Route selection and traffic with a foreign country
+              h2("Trafic aérien de passagers par pays, source DGAC"),
               input_cou,
               plotlyOutput("plot_cou"),
               input_date_route_cou,
               DT::dataTableOutput("table_route_cou")
       ),
-      
       tabItem(tabName = "search", # Search airport or airline
+              h2("Recherche aéroport et compagnie, source DGAC"),
               textInput(inputId = "airport_lib",
                         label = "Airport",
                         value = "orly"),
@@ -159,8 +161,8 @@ ui <- dashboardPage(dashboardHeader(title = "R Transport"),
                         value = "tvf"),
               DT::dataTableOutput("table_search_cie")
               ),
-      
       tabItem(tabName = "save_data", # SAVE DATA
+              h2("Chargement et sauvegarde"),
               input_submit,
               #textOutput("year_output"),  # Pour afficher la valeur de y
               textOutput("result_submit")  # Pour afficher le message "data loaded"
@@ -174,11 +176,11 @@ server <- function(input, output, session) {
   # SUBMIT ----
   observeEvent(input$submit, {# Action lors du clic sur le bouton "submit"
     showModal(modalDialog(# Afficher une boîte de dialogue de confirmation
-      title = "ATTENTION OPERATION LONGUE",
-      "Confirmez-vous ?",
+      title = "ATTENTION DURATION > 15 MIN",
+      "CONFIRM ?",
       footer = tagList(
-        modalButton("Annuler"),
-        actionButton("confirm", "Confirmer")))
+        modalButton("CANCEL"),
+        actionButton("confirm", "CONFIRM")))
       )
     })
   
