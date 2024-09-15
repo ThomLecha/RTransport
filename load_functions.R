@@ -68,6 +68,14 @@ map_leaflet_airport <- function(months, years){
   return(carte_interactive)
 }
 
+#PLOTLY EASILY SEVERAL CURVES FROM A DATAFRAME
+dataframe_with_datevariable_followedby_numvariables_to_plotly = function(df){
+  fig = reshape2::melt(df, id.vars = "date", variable.name = "Variable", value.name = "Value") %>% # Transforme les données en format long pour faciliter le tracé
+    plot_ly(x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%
+    layout(xaxis = list(title = 'Date'))
+  return(fig)
+}
+
 #PLOT & PREDICTION MODELS----
 # Définir le modèle: y = a/x + b + c*x
 modele <- function(par, x) {
@@ -146,9 +154,9 @@ plot_traffic_selection = function(df, selected_list){
   title_plot=paste0("tcam pre-covid : ", title_plot,"%, tcam post-covid : ")
   tmp=paste0(unlist(tcam_postcovid), collapse = "% & ")
   title_plot=paste0(title_plot,tmp,"%")
-  data_long = reshape2::melt(df, id.vars = "date", variable.name = "Variable", value.name = "Value")  # Transforme les données en format long pour faciliter le tracé
-  figure_plotly <- data_long %>%
-    plot_ly(x = ~date, y = ~Value, color = ~Variable, type = 'scatter', mode = 'lines') %>%
+  y_min = min(df[,-1], na.rm = TRUE)
+  y_max = max(df[,-1], na.rm = TRUE)
+  figure_plotly = dataframe_with_datevariable_followedby_numvariables_to_plotly(df) %>% 
     layout(
       title = list(text = title_plot,
                    x = 0.5,              # Centrer le titre horizontalement
@@ -159,13 +167,13 @@ plot_traffic_selection = function(df, selected_list){
       xaxis = list(title = 'Date'),
       shapes = list(list(type = "rect",
                          x0 = as.Date("2020-03-15"), x1 = as.Date("2021-05-01"),
-                         y0 = min(data_long$Value, na.rm = TRUE), y1 = max(data_long$Value, na.rm = TRUE),
+                         y0 = y_min, y1 = y_max,
                          fillcolor = "rgba(100, 100, 200, 0.3)",  # Couleur de la zone (avec transparence)
                          line = list(width = 0),  # Pas de bordure
                          layer = "below") # Placer la forme en dessous des traces
       ),
       annotations = list(list(x = as.Date("2020-10-01"),  # Date au centre de la période
-                              y = max(data_long$Value, na.rm = TRUE) * 0.8,     # Position verticale du texte à 50% du max des valeurs de Mpax
+                              y = y_max * 0.8,     # Position verticale du texte à 50% du max des valeurs de Mpax
                               text = "COVID",
                               xref = "x",  # Référencer l'axe x
                               yref = "y",  # Référencer l'axe y
@@ -173,6 +181,6 @@ plot_traffic_selection = function(df, selected_list){
                               font = list(size = 20, color = "black", family = "Arial", bold = TRUE),  # Texte en gras
                               xanchor = 'center',
                               yanchor = 'middle')
-    ))
+      ))
   return(figure_plotly)
 }
