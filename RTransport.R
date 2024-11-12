@@ -2,7 +2,7 @@
 ###   R TRANSPORT - MAIN       ###
 ##################################
 
-# rm(list = ls())
+# rm(list = ls()) 
 if (!exists("pax_apt_all")){ # Avoid loading libraries, functions and data if already loaded
   library(arrow) # read and write parquet
   library(bslib)
