@@ -1,0 +1,58 @@
+# Nom du workflow pour identifier son rôle dans le projet
+name: Dockerize
+
+# Déclenche le workflow sur certains événements de GitHub
+on:
+  push:
+    tags:
+      - "*"        # Déclenche le workflow pour tous les tags poussés
+    branches:
+      - main       # Déclenche le workflow pour tout push sur la branche 'main'
+
+# Définition des jobs (tâches) qui composent le workflow
+jobs:
+  docker-shiny:
+    runs-on: ubuntu-latest   # Utilise un environnement Ubuntu pour exécuter les étapes du job
+    
+    steps:
+      # Étape pour récupérer le code du dépôt
+      - uses: actions/checkout@v4  # Clone le dépôt pour que les fichiers soient disponibles pour les prochaines étapes
+
+      # Étape pour définir les métadonnées de l'image Docker
+      - name: Docker meta
+        id: docker_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ThomLecha/RTransport-deployment  # Nom de l'image Docker à utiliser
+
+      # Étape pour configurer QEMU (permet la compatibilité multi-plateforme)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      # Étape pour configurer Docker Buildx (outil de build avancé de Docker)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Étape pour se connecter à DockerHub, sauf si c'est une pull request
+      - name: Login to DockerHub
+        if: github.event_name != 'pull_request'  # Condition pour ne pas exécuter cette étape sur une pull request
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}  # Utilise le secret DOCKERHUB_USERNAME pour l'authentification
+          password: ${{ secrets.DOCKERHUB_TOKEN }}     # Utilise le secret DOCKERHUB_TOKEN pour l'authentification
+
+      # Étape pour construire et pousser l'image Docker
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .                                # Chemin du contexte de build (racine du dépôt)
+          file: ./docker/Dockerfile                 # Chemin vers le Dockerfile (dans le dossier 'docker')
+          push: ${{ github.event_name != 'pull_request' }}  # Pousse l'image seulement si ce n'est pas une pull request
+          tags: |
+            ${{ steps.docker_meta.outputs.tags }}   # Utilise les tags générés par Docker meta
+            ${{ github.ref == 'refs/heads/main' && 'rwinsee/funathon2024:shiny-test2' || '' }}  # Tag spécifique pour la branche 'main'
+          labels: ${{ steps.docker_meta.outputs.labels }}  # Labels pour l'image Docker
+
+      # Étape pour afficher le digest de l'image Docker créée
+      - name: Image digest
+        run: echo ${{ steps.docker_build.outputs.digest }}  # Affiche le digest (empreinte unique) de l'image Docker
