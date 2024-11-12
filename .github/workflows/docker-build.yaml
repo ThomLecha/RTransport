@@ -48,9 +48,10 @@ jobs:
           context: .                                # Chemin du contexte de build (racine du dépôt)
           file: ./docker/Dockerfile                 # Chemin vers le Dockerfile (dans le dossier 'docker')
           push: ${{ github.event_name != 'pull_request' }}  # Pousse l'image seulement si ce n'est pas une pull request
+          # Utilise les tags générés par Docker meta et un tag spécifique pour la branche 'main'
           tags: |
-            ${{ steps.docker_meta.outputs.tags }}   # Utilise les tags générés par Docker meta
-            ${{ github.ref == 'refs/heads/main' && 'rwinsee/funathon2024:shiny-test2' || '' }}  # Tag spécifique pour la branche 'main'
+            ${{ steps.docker_meta.outputs.tags }}   
+            ${{ github.ref == 'refs/heads/main' && 'ThomLecha/RTransport-deployment:latest' || '' }}
           labels: ${{ steps.docker_meta.outputs.labels }}  # Labels pour l'image Docker
 
       # Étape pour afficher le digest de l'image Docker créée
