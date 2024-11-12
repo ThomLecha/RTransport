@@ -51,7 +51,7 @@ jobs:
           # Utilise les tags générés par Docker meta et un tag spécifique pour la branche 'main'
           tags: |
             ${{ steps.docker_meta.outputs.tags }}   
-            ${{ github.ref == 'refs/heads/main' && 'ThomLecha/RTransport-deployment:latest' || '' }}
+            ${{ github.ref == 'refs/heads/main' && 'thomlecha/rtransport-deployment:latest' || '' }}
           labels: ${{ steps.docker_meta.outputs.labels }}  # Labels pour l'image Docker
 
       # Étape pour afficher le digest de l'image Docker créée
