@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rtransport-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - rtransport-dashboard.kub.sspcloud.fr  # Remplace par le domaine assigné par l’admin réseau
+  rules:
+  - host: rtransport-dashboard.kub.sspcloud.fr
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: rtransport-service  # Associe le nom du service défini dans service.yaml
+            port:
+              number: 80

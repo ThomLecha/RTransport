@@ -17,7 +17,7 @@ COPY . /srv/shiny-server/
 RUN R -e "install.packages(c('tidyr', 'arrow', 'bslib', 'dplyr', 'ggplot2', 'leaflet', 'minpack.lm', 'lubridate', 'plotly', 'readr', 'reshape2', 'sf', 'shiny', 'shinydashboard', 'stringr', 'data.table', 'shinyWidgets', 'DT'))"
 
 # Expose le port utilisé par Shiny
-EXPOSE 3838
+EXPOSE 3839
 
 # Démarre le serveur Shiny
 CMD ["R", "-e", "shiny::runApp('/srv/shiny-server')"]

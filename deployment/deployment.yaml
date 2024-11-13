@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rtransport-deployment
+  labels:
+    app: rtransport
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rtransport
+  template:
+    metadata:
+      labels:
+        app: rtransport
+    spec:
+      containers:
+      - name: rtransport
+        image: hamster12100/rtransport-deployment:latest  # Remplace par ton image
+        ports:
+        - containerPort: 3838  # Port exposé par Shiny

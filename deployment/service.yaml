@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rtransport-service
+spec:
+  selector:
+    app: rtransport
+  ports:
+    - protocol: TCP
+      port: 80          # Port interne utilisé par Ingress
+      targetPort: 3839   # Port de ton application Shiny dans le conteneur
