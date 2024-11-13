@@ -20,4 +20,4 @@ RUN R -e "install.packages(c('tidyr', 'arrow', 'bslib', 'dplyr', 'ggplot2', 'lea
 EXPOSE 3839
 
 # Démarre le serveur Shiny
-CMD ["R", "-e", "shiny::runApp('/srv/shiny-server')"]
+CMD ["R", "-e", "shiny::runApp('/srv/shiny-server', port = 3839, host = '0.0.0.0')"]
