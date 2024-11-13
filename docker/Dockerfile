@@ -3,6 +3,7 @@ FROM rocker/shiny:latest
 
 # Met à jour le gestionnaire de paquets et installe les bibliothèques système nécessaires pour sf
 RUN apt-get update && apt-get install -y \
+    libudunits2-0 \
     libudunits2-dev \
     libgdal-dev \
     libgeos-dev \
