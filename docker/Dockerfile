@@ -1,6 +1,14 @@
 # Utilise une image de base pour R et Shiny
 FROM rocker/shiny:latest
 
+# Met à jour le gestionnaire de paquets et installe les bibliothèques système nécessaires pour sf
+RUN apt-get update && apt-get install -y \
+    libudunits2-dev \
+    libgdal-dev \
+    libgeos-dev \
+    libproj-dev && \
+    rm -rf /var/lib/apt/lists/*  # Nettoie le cache pour réduire la taille de l'image
+
 # Copie tous les fichiers de ton projet dans le répertoire de travail du conteneur
 COPY . /srv/shiny-server/
 
